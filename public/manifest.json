@@ -1,0 +1,11 @@
+{
+  "name": "Helping Hand AI Solutions",
+  "short_name": "HHAI Solutions",
+  "description": "We help startups turn ideas into scalable products in weeks, not months — with flexible investment models that lower costs and align our success with yours.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#022c22",
+  "theme_color": "#16a34a",
+  "orientation": "portrait",
+  "lang": "en"
+}
