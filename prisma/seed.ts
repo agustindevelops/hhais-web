@@ -42,6 +42,48 @@ async function seedClientAccess() {
     },
   });
 
+  let business = await prisma.business.findUnique({
+    where: { clientId: client.id },
+  });
+
+  if (!business) {
+    business = await prisma.business.create({
+      data: {
+        clientId: client.id,
+        name: client.name,
+      },
+    });
+  }
+
+  const primaryContact = await prisma.contact.findFirst({
+    where: { businessId: business.id, isPrimary: true },
+  });
+
+  if (!primaryContact) {
+    await prisma.contact.create({
+      data: {
+        businessId: business.id,
+        name: client.name,
+        email: client.email,
+        isPrimary: true,
+      },
+    });
+  }
+
+  const projectCount = await prisma.project.count({
+    where: { businessId: business.id },
+  });
+
+  if (projectCount === 0) {
+    await prisma.project.create({
+      data: {
+        businessId: business.id,
+        name: "",
+        descriptionMarkdown: "",
+      },
+    });
+  }
+
   console.log(
     `Intake URL: http://localhost:3000/intake?token=${SEED_ACCESS_TOKEN}`,
   );

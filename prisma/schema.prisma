@@ -55,6 +55,7 @@ model Client {
   name         String
   email        String
   accessTokens ClientAccessToken[]
+  business     Business?
   createdAt    DateTime            @default(now())
   updatedAt    DateTime            @updatedAt
 }
@@ -70,4 +71,118 @@ model ClientAccessToken {
   updatedAt DateTime  @updatedAt
 
   @@index([clientId])
+}
+
+model Business {
+  id        String    @id @default(cuid())
+  clientId  String    @unique
+  client    Client    @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  name      String
+  legalName String?
+  domain    String?
+  website   String?
+  contacts  Contact[]
+  projects  Project[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
+model Contact {
+  id         String   @id @default(cuid())
+  businessId String
+  business   Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  name       String
+  email      String
+  phone      String?
+  role       String?
+  isPrimary  Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([businessId])
+}
+
+model Project {
+  id                      String        @id @default(cuid())
+  businessId              String
+  business                Business      @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  name                    String        @default("")
+  descriptionMarkdown     String        @default("")
+  additionalNotesMarkdown String?
+  submittedAt             DateTime?
+  features                Feature[]
+  integrations            Integration[]
+  attachments             Attachment[]
+  createdAt               DateTime      @default(now())
+  updatedAt               DateTime      @updatedAt
+
+  @@index([businessId])
+}
+
+model Feature {
+  id                  String               @id @default(cuid())
+  projectId           String
+  project             Project              @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  name                String
+  descriptionMarkdown String               @default("")
+  sortOrder           Int                  @default(0)
+  featureIntegrations FeatureIntegration[]
+  attachments         Attachment[]
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+
+  @@index([projectId])
+  @@index([projectId, sortOrder])
+}
+
+model Integration {
+  id                  String               @id @default(cuid())
+  projectId           String
+  project             Project              @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  name                String
+  descriptionMarkdown String               @default("")
+  /// existing | needs_creation | unknown
+  accountStatus       String               @default("unknown")
+  accountEmail        String?
+  featureIntegrations FeatureIntegration[]
+  attachments         Attachment[]
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+
+  @@index([projectId])
+}
+
+model FeatureIntegration {
+  featureId     String
+  integrationId String
+  feature       Feature     @relation(fields: [featureId], references: [id], onDelete: Cascade)
+  integration   Integration @relation(fields: [integrationId], references: [id], onDelete: Cascade)
+
+  @@id([featureId, integrationId])
+  @@index([integrationId])
+}
+
+model Attachment {
+  id                  String       @id @default(cuid())
+  projectId           String
+  project             Project      @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  featureId           String?
+  feature             Feature?     @relation(fields: [featureId], references: [id], onDelete: SetNull)
+  integrationId       String?
+  integration         Integration? @relation(fields: [integrationId], references: [id], onDelete: SetNull)
+  fileName            String
+  storagePath         String
+  contentType         String
+  byteSize            Int?
+  /// created | uploaded
+  status              String
+  signatureExpiration DateTime?
+  createdAt           DateTime     @default(now())
+  updatedAt           DateTime     @updatedAt
+
+  @@index([projectId])
+  @@index([featureId])
+  @@index([integrationId])
+  @@index([storagePath])
+  @@index([status])
 }
