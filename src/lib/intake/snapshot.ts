@@ -8,6 +8,7 @@ import {
   normalizeProjectPriorities,
   type AccountStatus,
   type IntakeAttachment,
+  type IntakePaymentPlan,
   type IntakeSnapshot,
 } from "@/lib/intake/types";
 
@@ -39,8 +40,9 @@ export function toIntakeSnapshot(input: {
   token: string;
   business: BootstrappedBusiness;
   project: CurrentProject;
+  paymentPlans: IntakePaymentPlan[];
 }): IntakeSnapshot {
-  const { token, business, project } = input;
+  const { token, business, project, paymentPlans } = input;
   const contact = getPrimaryContact(business);
 
   const generalAttachments = project.attachments
@@ -71,8 +73,10 @@ export function toIntakeSnapshot(input: {
       fee:
         project.fee == null ? "" : formatFee(Number(project.fee.toString())),
       priorities: normalizeProjectPriorities(project.priorities),
+      paymentPlanId: project.paymentPlanId ?? "",
       submittedAt: project.submittedAt?.toISOString() ?? null,
     },
+    paymentPlans,
     features: project.features.map((feature) => ({
       id: feature.id,
       name: feature.name,

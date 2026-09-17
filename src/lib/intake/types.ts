@@ -64,6 +64,13 @@ export function formatFee(value: number): string {
   return value.toFixed(2);
 }
 
+export type IntakePaymentPlan = {
+  id: string;
+  slug: string;
+  name: string;
+  description: string;
+};
+
 export type IntakeAttachment = {
   id: string;
   fileName: string;
@@ -115,8 +122,10 @@ export type IntakeSnapshot = {
     additionalNotesMarkdown: string;
     fee: string;
     priorities: ProjectPriority[];
+    paymentPlanId: string;
     submittedAt: string | null;
   };
+  paymentPlans: IntakePaymentPlan[];
   features: IntakeFeature[];
   integrations: IntakeIntegration[];
   generalAttachments: IntakeAttachment[];
@@ -142,6 +151,7 @@ export type IntakeSavePayload = {
     additionalNotesMarkdown: string;
     fee: string;
     priorities: ProjectPriority[];
+    paymentPlanId: string;
   };
   features: Array<{
     id: string;

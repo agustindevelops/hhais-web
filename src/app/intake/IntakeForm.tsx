@@ -78,6 +78,7 @@ function toPayload(token: string, form: IntakeFormState): IntakeSavePayload {
       additionalNotesMarkdown: form.project.additionalNotesMarkdown,
       fee: form.project.fee,
       priorities: form.project.priorities,
+      paymentPlanId: form.project.paymentPlanId,
     },
     features: form.features.map((feature, index) => ({
       id: feature.id,
@@ -489,6 +490,47 @@ export default function IntakeForm({ snapshot }: IntakeFormProps) {
             })
           }
         />
+        <fieldset className="space-y-3">
+          <legend className={labelClass}>Preferred payment plan</legend>
+          {snapshot.paymentPlans.length === 0 ? (
+            <p className="text-sm text-default-600">
+              Payment plans are not available yet.
+            </p>
+          ) : (
+            <div className="space-y-2">
+              {snapshot.paymentPlans.map((plan) => (
+                <label
+                  key={plan.id}
+                  className="flex cursor-pointer items-start gap-3 rounded-md border border-default-200 bg-default-50 px-3 py-3"
+                >
+                  <input
+                    type="radio"
+                    name="payment-plan"
+                    className="mt-1"
+                    checked={form.project.paymentPlanId === plan.id}
+                    onChange={() =>
+                      setForm((current) => ({
+                        ...current,
+                        project: {
+                          ...current.project,
+                          paymentPlanId: plan.id,
+                        },
+                      }))
+                    }
+                  />
+                  <span>
+                    <span className="block text-sm font-medium text-default-900">
+                      {plan.name}
+                    </span>
+                    <span className="mt-1 block text-sm text-default-600">
+                      {plan.description}
+                    </span>
+                  </span>
+                </label>
+              ))}
+            </div>
+          )}
+        </fieldset>
         <div className="space-y-2">
           <p className={labelClass}>Priorities</p>
           <p className="text-sm text-default-600">

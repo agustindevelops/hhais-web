@@ -93,6 +93,8 @@ model Project {
   fee                     Decimal?      @db.Decimal(12, 2)
   /// Ranked values: time, quality, budget
   priorities              String[]      @default([])
+  paymentPlanId           String?
+  paymentPlan             PaymentPlan?  @relation(fields: [paymentPlanId], references: [id], onDelete: SetNull)
   submittedAt             DateTime?
   features                Feature[]
   integrations            Integration[]
@@ -101,6 +103,20 @@ model Project {
   updatedAt               DateTime      @updatedAt
 
   @@index([businessId])
+  @@index([paymentPlanId])
+}
+
+model PaymentPlan {
+  id          String    @id @default(cuid())
+  slug        String    @unique
+  name        String
+  description String
+  sortOrder   Int       @default(0)
+  projects    Project[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([sortOrder])
 }
 
 model Feature {

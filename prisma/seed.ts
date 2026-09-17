@@ -10,6 +10,43 @@ function markdown(value: string) {
   return value.replace(/^\n/, "").trim();
 }
 
+const PAYMENT_PLANS = [
+  {
+    slug: "pay_in_full",
+    name: "Pay in full",
+    description: "Pay the full project fee up front.",
+    sortOrder: 1,
+  },
+  {
+    slug: "pay_half",
+    name: "Pay half now, half when done",
+    description:
+      "Pay half of the project fee now and the remaining half when the project is complete.",
+    sortOrder: 2,
+  },
+  {
+    slug: "pay_monthly",
+    name: "Pay monthly",
+    description:
+      "Pay a $100 deposit now, then pay monthly for the next 4 months.",
+    sortOrder: 3,
+  },
+] as const;
+
+async function seedPaymentPlans() {
+  for (const plan of PAYMENT_PLANS) {
+    await prisma.paymentPlan.upsert({
+      where: { slug: plan.slug },
+      update: {
+        name: plan.name,
+        description: plan.description,
+        sortOrder: plan.sortOrder,
+      },
+      create: plan,
+    });
+  }
+}
+
 const aegisData = {
   business: {
     name: "Aegis Financial Solutions",
@@ -61,6 +98,7 @@ Contentful will also be used to host and manage website images/files that belong
 `),
     fee: "8500.00",
     priorities: ["quality", "time", "budget"],
+    paymentPlanSlug: "pay_in_full",
   },
   features: [
     {
@@ -450,6 +488,11 @@ async function seedAegisIntake() {
   const client = await ensureClient();
   await ensureAccessToken(client.id);
 
+  const paymentPlan = await prisma.paymentPlan.findUniqueOrThrow({
+    where: { slug: aegisData.project.paymentPlanSlug },
+    select: { id: true },
+  });
+
   const business = await prisma.business.upsert({
     where: { clientId: client.id },
     update: {
@@ -518,6 +561,7 @@ async function seedAegisIntake() {
         additionalNotesMarkdown: aegisData.project.additionalNotesMarkdown,
         fee: aegisData.project.fee,
         priorities: aegisData.project.priorities,
+        paymentPlanId: paymentPlan.id,
       },
     });
   } else {
@@ -529,6 +573,7 @@ async function seedAegisIntake() {
         additionalNotesMarkdown: aegisData.project.additionalNotesMarkdown,
         fee: aegisData.project.fee,
         priorities: aegisData.project.priorities,
+        paymentPlanId: paymentPlan.id,
       },
     });
   }
@@ -644,6 +689,7 @@ async function seedAegisIntake() {
 }
 
 async function main() {
+  await seedPaymentPlans();
   await seedAegisIntake();
 }
 

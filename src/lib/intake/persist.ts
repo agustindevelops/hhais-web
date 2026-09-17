@@ -61,6 +61,9 @@ function validateSubmit(payload: IntakeSavePayload): string | null {
   ) {
     return "Rank Time, Quality, and Budget in priority order.";
   }
+  if (!payload.project.paymentPlanId.trim()) {
+    return "Preferred payment plan is required.";
+  }
   if (payload.features.length === 0) {
     return "Add at least one Feature.";
   }
@@ -81,7 +84,12 @@ export async function loadIntakeSnapshot(
     return null;
   }
 
-  return toIntakeSnapshot({ token, business, project });
+  const paymentPlans = await prisma.paymentPlan.findMany({
+    orderBy: { sortOrder: "asc" },
+    select: { id: true, slug: true, name: true, description: true },
+  });
+
+  return toIntakeSnapshot({ token, business, project, paymentPlans });
 }
 
 export async function persistIntake(
@@ -107,6 +115,17 @@ export async function persistIntake(
   const project = getCurrentProject(business);
   if (!project) {
     return { ok: false, error: "Project could not be loaded." };
+  }
+
+  const paymentPlanId = payload.project.paymentPlanId.trim() || null;
+  if (paymentPlanId) {
+    const paymentPlan = await prisma.paymentPlan.findUnique({
+      where: { id: paymentPlanId },
+      select: { id: true },
+    });
+    if (!paymentPlan) {
+      return { ok: false, error: "Preferred payment plan is invalid." };
+    }
   }
 
   try {
@@ -157,6 +176,7 @@ export async function persistIntake(
           ),
           fee: parseFee(payload.project.fee)?.toFixed(2) ?? null,
           priorities: normalizeProjectPriorities(payload.project.priorities),
+          paymentPlanId,
           ...(options.submit && !project.submittedAt
             ? { submittedAt: new Date() }
             : {}),

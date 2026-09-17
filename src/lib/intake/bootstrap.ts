@@ -34,6 +34,7 @@ const intakeInclude = {
         where: { status: "uploaded" },
         orderBy: { createdAt: "asc" as const },
       },
+      paymentPlan: true,
     },
   },
 } as const;
