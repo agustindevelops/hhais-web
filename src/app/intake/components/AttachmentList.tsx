@@ -7,8 +7,8 @@ import type { IntakeAttachment } from "@/lib/intake/types";
 
 import {
   deleteIntakeFile,
+  downloadIntakeFile,
   FILE_INPUT_ACCEPT,
-  openIntakeFile,
   uploadIntakeFile,
 } from "../lib/upload";
 
@@ -30,6 +30,7 @@ export default function AttachmentList({
   onChange,
 }: FileListProps) {
   const [busy, setBusy] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const onFileChange = async (event: ChangeEvent<HTMLInputElement>) => {
@@ -40,6 +41,7 @@ export default function AttachmentList({
     }
 
     setBusy(true);
+    setUploading(true);
     setError(null);
     try {
       const uploaded = await uploadIntakeFile({
@@ -53,6 +55,7 @@ export default function AttachmentList({
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Upload failed");
     } finally {
+      setUploading(false);
       setBusy(false);
     }
   };
@@ -70,12 +73,15 @@ export default function AttachmentList({
     }
   };
 
-  const onOpen = async (attachmentId: string) => {
+  const onDownload = async (attachment: IntakeAttachment) => {
+    setBusy(true);
     setError(null);
     try {
-      await openIntakeFile(token, attachmentId);
+      await downloadIntakeFile(token, attachment.id, attachment.fileName);
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "Could not open file");
+      setError(cause instanceof Error ? cause.message : "Could not download file");
+    } finally {
+      setBusy(false);
     }
   };
 
@@ -87,22 +93,29 @@ export default function AttachmentList({
             key={attachment.id}
             className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-default-200 bg-default-50 px-3 py-2 text-sm"
           >
-            <button
-              type="button"
-              className="text-left font-medium text-primary hover:underline"
-              onClick={() => onOpen(attachment.id)}
-            >
+            <span className="min-w-0 flex-1 font-medium text-default-900">
               {attachment.fileName}
-            </button>
-            <Button
-              type="button"
-              size="sm"
-              variant="outline"
-              onClick={() => onDelete(attachment.id)}
-              disabled={busy}
-            >
-              Remove
-            </Button>
+            </span>
+            <div className="flex items-center gap-2">
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={() => onDownload(attachment)}
+                disabled={busy}
+              >
+                Download
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={() => onDelete(attachment.id)}
+                disabled={busy}
+              >
+                Remove
+              </Button>
+            </div>
           </li>
         ))}
       </ul>
@@ -116,7 +129,7 @@ export default function AttachmentList({
           onChange={onFileChange}
         />
       </label>
-      {busy ? (
+      {uploading ? (
         <p className="text-sm text-default-600">Uploading…</p>
       ) : null}
       {error ? (

@@ -26,10 +26,24 @@ export function isIntakeAuthFailure(
 export async function requireIntakeToken(
   request: Request,
 ): Promise<IntakeAuthResult> {
-  const token = new URL(request.url).searchParams.get("token") ?? undefined;
+  const token = new URL(request.url).searchParams.get("token")?.trim() || undefined;
+
+  if (!token) {
+    return {
+      ok: false,
+      response: NextResponse.json(
+        {
+          error: "Unauthorized",
+          message: "An intake token is required.",
+        },
+        { status: 401 },
+      ),
+    };
+  }
+
   const access = await validateAccessToken(token);
 
-  if (!access || !token) {
+  if (!access) {
     return {
       ok: false,
       response: NextResponse.json(

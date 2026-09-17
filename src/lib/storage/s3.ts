@@ -34,6 +34,10 @@ function getClient(): { client: S3Client; config: StorageConfig } {
         secretAccessKey: config.secretAccessKey,
       },
       forcePathStyle: true,
+      // Default WHEN_SUPPORTED adds x-amz-checksum-* to presigned PUTs. Browsers
+      // cannot send those headers, so R2/S3 CORS-fails the upload as "Failed to fetch".
+      requestChecksumCalculation: "WHEN_REQUIRED",
+      responseChecksumValidation: "WHEN_REQUIRED",
     });
     cachedConfig = config;
   }
@@ -61,7 +65,17 @@ export async function getUploadUrl(input: {
       Key: input.s3Key,
       ContentType: input.contentType,
     }),
-    { expiresIn },
+    {
+      expiresIn,
+      unhoistableHeaders: new Set([
+        "x-amz-checksum-crc32",
+        "x-amz-checksum-crc32c",
+        "x-amz-checksum-sha1",
+        "x-amz-checksum-sha256",
+        "x-amz-sdk-checksum-algorithm",
+        "x-amz-checksum-algorithm",
+      ]),
+    },
   );
 
   return {
@@ -73,19 +87,40 @@ export async function getUploadUrl(input: {
   };
 }
 
-export async function getReadUrl(
-  s3Key: string,
-  expiresIn = UPLOAD_URL_EXPIRES_IN,
-): Promise<string> {
+export function attachmentContentDisposition(fileName: string) {
+  const ascii = fileName
+    .replace(/[^\x20-\x7E]/g, "_")
+    .replace(/["\\]/g, "_");
+  return `attachment; filename="${ascii}"; filename*=UTF-8''${encodeURIComponent(fileName)}`;
+}
+
+export async function getObjectStream(s3Key: string): Promise<{
+  stream: ReadableStream;
+  contentType: string | undefined;
+  contentLength: number | undefined;
+} | null> {
   const { client: s3, config } = getClient();
-  return getSignedUrl(
-    s3,
-    new GetObjectCommand({
-      Bucket: config.bucket,
-      Key: s3Key,
-    }),
-    { expiresIn },
-  );
+  try {
+    const response = await s3.send(
+      new GetObjectCommand({
+        Bucket: config.bucket,
+        Key: s3Key,
+      }),
+    );
+    if (!response.Body) {
+      return null;
+    }
+    return {
+      stream: response.Body.transformToWebStream(),
+      contentType: response.ContentType,
+      contentLength: response.ContentLength,
+    };
+  } catch (error) {
+    if (isNotFoundError(error)) {
+      return null;
+    }
+    throw error;
+  }
 }
 
 export async function headObject(s3Key: string): Promise<{

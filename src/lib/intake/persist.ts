@@ -8,6 +8,8 @@ import {
 import { toIntakeSnapshot } from "@/lib/intake/snapshot";
 import {
   ACCOUNT_STATUSES,
+  normalizeProjectPriorities,
+  parseFee,
   type IntakeActionResult,
   type IntakeSavePayload,
   type IntakeSnapshot,
@@ -48,6 +50,16 @@ function validateSubmit(payload: IntakeSavePayload): string | null {
   }
   if (!isNonEmptyMarkdown(payload.project.descriptionMarkdown)) {
     return "Project Description is required.";
+  }
+  if (parseFee(payload.project.fee) == null) {
+    return "Fee is required and must be a number with up to two decimal places.";
+  }
+  const priorities = normalizeProjectPriorities(payload.project.priorities);
+  if (
+    payload.project.priorities.length !== 3 ||
+    priorities.join(",") !== payload.project.priorities.join(",")
+  ) {
+    return "Rank Time, Quality, and Budget in priority order.";
   }
   if (payload.features.length === 0) {
     return "Add at least one Feature.";
@@ -143,6 +155,8 @@ export async function persistIntake(
           additionalNotesMarkdown: optionalText(
             payload.project.additionalNotesMarkdown,
           ),
+          fee: parseFee(payload.project.fee)?.toFixed(2) ?? null,
+          priorities: normalizeProjectPriorities(payload.project.priorities),
           ...(options.submit && !project.submittedAt
             ? { submittedAt: new Date() }
             : {}),

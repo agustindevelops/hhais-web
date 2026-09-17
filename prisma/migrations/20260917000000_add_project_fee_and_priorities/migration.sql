@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE "Project" ADD COLUMN "fee" DECIMAL(12,2),
+ADD COLUMN "priorities" TEXT[] NOT NULL DEFAULT ARRAY[]::TEXT[];

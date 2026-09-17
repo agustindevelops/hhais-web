@@ -20,6 +20,10 @@ export async function uploadIntakeFile(input: {
   featureId?: string | null;
   integrationId?: string | null;
 }): Promise<IntakeAttachment> {
+  if (!input.token) {
+    throw new Error("Missing intake token.");
+  }
+
   const contentType = contentTypeFromFile(input.file);
   if (!contentType) {
     throw new Error(
@@ -57,11 +61,18 @@ export async function uploadIntakeFile(input: {
     throw new Error(signJson.message ?? "Could not start file upload");
   }
 
-  const putRes = await fetch(signJson.upload_url as string, {
-    method: "PUT",
-    headers: { "Content-Type": contentType },
-    body: input.file,
-  });
+  let putRes: Response;
+  try {
+    putRes = await fetch(signJson.upload_url as string, {
+      method: "PUT",
+      headers: { "Content-Type": contentType },
+      body: input.file,
+    });
+  } catch {
+    throw new Error(
+      "Could not reach file storage. If this keeps happening, the storage CORS policy may be blocking the upload.",
+    );
+  }
   if (!putRes.ok) {
     throw new Error(`Direct upload failed (${putRes.status})`);
   }
@@ -111,13 +122,26 @@ export async function deleteIntakeFile(token: string, attachmentId: string) {
   }
 }
 
-export async function openIntakeFile(token: string, attachmentId: string) {
+export async function downloadIntakeFile(
+  token: string,
+  attachmentId: string,
+  fileName: string,
+) {
   const res = await fetch(withIntakeToken(`/api/file/${attachmentId}`, token));
-  const json = await res.json();
-  if (!res.ok || typeof json.read_url !== "string") {
+  if (!res.ok) {
+    const json = await res.json().catch(() => ({}));
     throw new Error(
-      typeof json.message === "string" ? json.message : "Failed to open file",
+      typeof json.message === "string" ? json.message : "Failed to download file",
     );
   }
-  window.open(json.read_url, "_blank", "noopener,noreferrer");
+
+  const blob = await res.blob();
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.download = fileName;
+  document.body.appendChild(anchor);
+  anchor.click();
+  anchor.remove();
+  URL.revokeObjectURL(url);
 }

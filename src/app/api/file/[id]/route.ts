@@ -10,7 +10,10 @@ import {
   FileServiceError,
   getOwnedAttachment,
 } from "@/lib/storage/fileService";
-import { getReadUrl } from "@/lib/storage/s3";
+import {
+  attachmentContentDisposition,
+  getObjectStream,
+} from "@/lib/storage/s3";
 
 export const runtime = "nodejs";
 
@@ -18,7 +21,7 @@ type RouteContext = {
   params: Promise<{ id: string }>;
 };
 
-/** Token-scoped signed GET URL for a verified attachment. */
+/** Token-scoped download: stream the object with Content-Disposition attachment. */
 export async function GET(request: Request, context: RouteContext) {
   const auth = await requireIntakeToken(request);
   if (isIntakeAuthFailure(auth)) {
@@ -46,18 +49,27 @@ export async function GET(request: Request, context: RouteContext) {
       );
     }
 
-    const readUrl = await getReadUrl(attachment.storagePath);
+    const object = await getObjectStream(attachment.storagePath);
+    if (!object) {
+      return NextResponse.json(
+        {
+          error: "FILE_NOT_FOUND",
+          message: "File not found in storage.",
+        },
+        { status: 404 },
+      );
+    }
 
-    return NextResponse.json({
-      attachment: {
-        id: attachment.id,
-        fileName: attachment.fileName,
-        contentType: attachment.contentType,
-        byteSize: attachment.byteSize,
-        status: attachment.status,
-      },
-      read_url: readUrl,
+    const headers = new Headers({
+      "Content-Type": attachment.contentType,
+      "Content-Disposition": attachmentContentDisposition(attachment.fileName),
+      "Cache-Control": "private, no-store",
     });
+    if (object.contentLength != null) {
+      headers.set("Content-Length", String(object.contentLength));
+    }
+
+    return new NextResponse(object.stream, { headers });
   } catch (error) {
     if (error instanceof FileServiceError) {
       return NextResponse.json(

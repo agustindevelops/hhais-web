@@ -9,6 +9,10 @@ import Button from "@/components/Elements/Button";
 import { cn } from "@/helpers/cn";
 import {
   ACCOUNT_STATUSES,
+  PROJECT_PRIORITY_LABELS,
+  formatFee,
+  normalizeProjectPriorities,
+  parseFee,
   type AccountStatus,
   type IntakeAttachment,
   type IntakeFeature,
@@ -72,6 +76,8 @@ function toPayload(token: string, form: IntakeFormState): IntakeSavePayload {
       name: form.project.name,
       descriptionMarkdown: form.project.descriptionMarkdown,
       additionalNotesMarkdown: form.project.additionalNotesMarkdown,
+      fee: form.project.fee,
+      priorities: form.project.priorities,
     },
     features: form.features.map((feature, index) => ({
       id: feature.id,
@@ -167,6 +173,25 @@ export default function IntakeForm({ snapshot }: IntakeFormProps) {
         feature.id === id ? { ...feature, ...patch } : feature,
       ),
     }));
+  };
+
+  const movePriority = (index: number, direction: -1 | 1) => {
+    setForm((current) => {
+      const nextIndex = index + direction;
+      if (nextIndex < 0 || nextIndex >= current.project.priorities.length) {
+        return current;
+      }
+      const priorities = [...current.project.priorities];
+      const [moved] = priorities.splice(index, 1);
+      priorities.splice(nextIndex, 0, moved);
+      return {
+        ...current,
+        project: {
+          ...current.project,
+          priorities: normalizeProjectPriorities(priorities),
+        },
+      };
+    });
   };
 
   const moveFeature = (index: number, direction: -1 | 1) => {
@@ -300,7 +325,7 @@ export default function IntakeForm({ snapshot }: IntakeFormProps) {
       ) : null}
 
       {statusMessage ? (
-        <p className="text-sm text-default-700" role="status">
+        <p className="text-sm text-white" role="status">
           {statusMessage}
         </p>
       ) : null}
@@ -436,6 +461,71 @@ export default function IntakeForm({ snapshot }: IntakeFormProps) {
             }
             placeholder="Describe the project"
           />
+        </div>
+        <Field
+          id="project-fee"
+          label="Fee"
+          value={form.project.fee}
+          inputMode="decimal"
+          onChange={(value) =>
+            setForm((current) => ({
+              ...current,
+              project: { ...current.project, fee: value },
+            }))
+          }
+          onBlur={() =>
+            setForm((current) => {
+              const parsed = parseFee(current.project.fee);
+              return {
+                ...current,
+                project: {
+                  ...current.project,
+                  fee:
+                    parsed == null
+                      ? current.project.fee.trim()
+                      : formatFee(parsed),
+                },
+              };
+            })
+          }
+        />
+        <div className="space-y-2">
+          <p className={labelClass}>Priorities</p>
+          <p className="text-sm text-default-600">
+            Rank Time, Quality, and Budget. 1 is the highest priority.
+          </p>
+          <ol className="space-y-2">
+            {form.project.priorities.map((priority, index) => (
+              <li
+                key={priority}
+                className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-default-200 bg-default-50 px-3 py-2"
+              >
+                <span className="text-sm font-medium text-default-900">
+                  {index + 1}. {PROJECT_PRIORITY_LABELS[priority]}
+                </span>
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="ghost"
+                    disabled={index === 0}
+                    onClick={() => movePriority(index, -1)}
+                  >
+                    Up
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="ghost"
+                    disabled={index === form.project.priorities.length - 1}
+                    onClick={() => movePriority(index, 1)}
+                  >
+                    Down
+                  </Button>
+                </div>
+              </li>
+            ))}
+          </ol>
         </div>
         <div className="space-y-2">
           <label className={labelClass} htmlFor="project-notes">
@@ -728,13 +818,17 @@ function Field({
   label,
   value,
   onChange,
+  onBlur,
   type = "text",
+  inputMode,
 }: {
   id: string;
   label: string;
   value: string;
   onChange: (value: string) => void;
+  onBlur?: () => void;
   type?: string;
+  inputMode?: "decimal" | "numeric" | "text";
 }) {
   return (
     <div className="space-y-2">
@@ -744,8 +838,10 @@ function Field({
       <input
         id={id}
         type={type}
+        inputMode={inputMode}
         value={value}
         onChange={(event) => onChange(event.target.value)}
+        onBlur={onBlur}
         className={cn(fieldClass)}
       />
     </div>

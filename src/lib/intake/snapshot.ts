@@ -4,6 +4,8 @@ import type { CurrentProject } from "@/lib/intake/bootstrap";
 import { getPrimaryContact, type BootstrappedBusiness } from "@/lib/intake/bootstrap";
 import {
   ACCOUNT_STATUSES,
+  formatFee,
+  normalizeProjectPriorities,
   type AccountStatus,
   type IntakeAttachment,
   type IntakeSnapshot,
@@ -66,6 +68,9 @@ export function toIntakeSnapshot(input: {
       name: project.name,
       descriptionMarkdown: project.descriptionMarkdown,
       additionalNotesMarkdown: project.additionalNotesMarkdown ?? "",
+      fee:
+        project.fee == null ? "" : formatFee(Number(project.fee.toString())),
+      priorities: normalizeProjectPriorities(project.priorities),
       submittedAt: project.submittedAt?.toISOString() ?? null,
     },
     features: project.features.map((feature) => ({
