@@ -99,11 +99,32 @@ model Project {
   features                Feature[]
   integrations            Integration[]
   attachments             Attachment[]
+  contract                Contract?
   createdAt               DateTime      @default(now())
   updatedAt               DateTime      @updatedAt
 
   @@index([businessId])
   @@index([paymentPlanId])
+}
+
+model Contract {
+  id        String  @id @default(cuid())
+  projectId String  @unique
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  clientSignedAt      DateTime?
+  clientSignerName    String?
+  clientSignaturePath String?
+
+  hhaisSignedAt      DateTime?
+  hhaisSignerName    String?
+  hhaisSignaturePath String?
+
+  finalPdfPath String?
+  lockedAt     DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model PaymentPlan {

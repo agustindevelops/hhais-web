@@ -1,3 +1,9 @@
+# Local development (hot reload): start only Postgres, then run the app on the host.
+#   docker compose up -d
+#   yarn prisma:migrate && yarn dev
+#
+# Full stack (production image, no hot reload):
+#   docker compose --profile app up --build
 services:
   db:
     image: postgres:16-alpine
@@ -18,6 +24,7 @@ services:
       start_period: 10s
 
   web:
+    profiles: ["app"]
     build:
       context: .
       dockerfile: Dockerfile

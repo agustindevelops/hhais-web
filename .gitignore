@@ -2,7 +2,12 @@
 /node_modules
 /.pnp
 .pnp.js
+.pnp.cjs
+.pnp.loader.mjs
 .yarn/install-state.gz
+.yarn/unplugged
+.yarn/cache
+.yarn/build-state.yml
 
 # testing
 /coverage
@@ -33,3 +38,5 @@ yarn-error.log*
 
 # vercel
 .vercel
+
+ase-wms-web.code-workspace

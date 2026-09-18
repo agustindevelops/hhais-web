@@ -14,6 +14,7 @@ import {
   type IntakeSavePayload,
   type IntakeSnapshot,
 } from "@/lib/intake/types";
+import { ensureContract } from "@/lib/contract/ensure";
 import { validateAccessToken } from "@/lib/client-access";
 import { prisma } from "@/lib/prisma";
 
@@ -115,6 +116,18 @@ export async function persistIntake(
   const project = getCurrentProject(business);
   if (!project) {
     return { ok: false, error: "Project could not be loaded." };
+  }
+
+  const existingContract = await prisma.contract.findUnique({
+    where: { projectId: project.id },
+    select: { lockedAt: true },
+  });
+  if (existingContract?.lockedAt) {
+    return {
+      ok: false,
+      error:
+        "This project's agreement is signed and locked. Intake can no longer be edited.",
+    };
   }
 
   const paymentPlanId = payload.project.paymentPlanId.trim() || null;
@@ -359,6 +372,10 @@ export async function persistIntake(
   const snapshot = await loadIntakeSnapshot(payload.token);
   if (!snapshot) {
     return { ok: false, error: "Saved, but the intake could not be reloaded." };
+  }
+
+  if (options.submit || snapshot.project.submittedAt) {
+    await ensureContract(snapshot.project.id);
   }
 
   return { ok: true, snapshot };

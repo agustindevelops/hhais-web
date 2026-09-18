@@ -562,6 +562,7 @@ async function seedAegisIntake() {
         fee: aegisData.project.fee,
         priorities: aegisData.project.priorities,
         paymentPlanId: paymentPlan.id,
+        submittedAt: project.submittedAt ?? new Date(),
       },
     });
   } else {
@@ -574,9 +575,16 @@ async function seedAegisIntake() {
         fee: aegisData.project.fee,
         priorities: aegisData.project.priorities,
         paymentPlanId: paymentPlan.id,
+        submittedAt: new Date(),
       },
     });
   }
+
+  await prisma.contract.upsert({
+    where: { projectId: project.id },
+    update: {},
+    create: { projectId: project.id },
+  });
 
   const featuresByName = new Map<string, string>();
   const featureNames = aegisData.features.map((item) => item.name);
@@ -685,6 +693,12 @@ async function seedAegisIntake() {
   console.log("Aegis Financial Solutions intake seeded successfully.");
   console.log(
     `Intake URL: http://localhost:3000/intake?token=${SEED_ACCESS_TOKEN}`,
+  );
+  console.log(
+    `Contract URL (client): http://localhost:3000/contract?token=${SEED_ACCESS_TOKEN}`,
+  );
+  console.log(
+    `Contract URL (HHAIS): http://localhost:3000/contract?token=${SEED_ACCESS_TOKEN}&admin=true`,
   );
 }
 

@@ -66,3 +66,11 @@ export function getStorageConfig(): StorageConfig {
 export function buildIntakeS3Key(clientId: string, attachmentId: string): string {
   return `${clientId}/intake/${attachmentId}`;
 }
+
+export function buildContractS3Key(
+  clientId: string,
+  contractId: string,
+  fileName: "client-signature.png" | "hhais-signature.png" | "executed.pdf",
+): string {
+  return `${clientId}/contracts/${contractId}/${fileName}`;
+}

@@ -94,6 +94,22 @@ export function attachmentContentDisposition(fileName: string) {
   return `attachment; filename="${ascii}"; filename*=UTF-8''${encodeURIComponent(fileName)}`;
 }
 
+export async function putObject(input: {
+  s3Key: string;
+  body: Buffer | Uint8Array;
+  contentType: string;
+}): Promise<void> {
+  const { client: s3, config } = getClient();
+  await s3.send(
+    new PutObjectCommand({
+      Bucket: config.bucket,
+      Key: input.s3Key,
+      Body: input.body,
+      ContentType: input.contentType,
+    }),
+  );
+}
+
 export async function getObjectStream(s3Key: string): Promise<{
   stream: ReadableStream;
   contentType: string | undefined;
@@ -114,6 +130,33 @@ export async function getObjectStream(s3Key: string): Promise<{
       stream: response.Body.transformToWebStream(),
       contentType: response.ContentType,
       contentLength: response.ContentLength,
+    };
+  } catch (error) {
+    if (isNotFoundError(error)) {
+      return null;
+    }
+    throw error;
+  }
+}
+
+export async function getObjectBytes(s3Key: string): Promise<{
+  bytes: Uint8Array;
+  contentType: string | undefined;
+} | null> {
+  const { client: s3, config } = getClient();
+  try {
+    const response = await s3.send(
+      new GetObjectCommand({
+        Bucket: config.bucket,
+        Key: s3Key,
+      }),
+    );
+    if (!response.Body) {
+      return null;
+    }
+    return {
+      bytes: new Uint8Array(await response.Body.transformToByteArray()),
+      contentType: response.ContentType,
     };
   } catch (error) {
     if (isNotFoundError(error)) {
