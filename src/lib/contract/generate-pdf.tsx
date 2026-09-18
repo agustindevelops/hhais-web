@@ -14,9 +14,38 @@ import { createElement } from "react";
 import { developedBy } from "@/common/constants";
 import {
   APPENDIX_A_INTRO,
-  APPENDIX_A_TITLE,
+  DOCUMENT_KIND,
+  DOCUMENT_TITLE,
+  FALLBACK,
+  PROVIDER_NAME,
+  PROVIDER_SHORT,
+  PROVIDER_SIGNATORY_TITLE,
+  REFERENCED_DOCUMENTS_HEADING,
+  SECTION_TITLE,
+  accountStatusLine,
   appendixAClosing,
-  exhibitScopeLabel,
+  clauseTitle,
+  contractLede,
+  contractTerms,
+  displayValue,
+  exhibitListLine,
+  feeCommencement,
+  feeToBeDetermined,
+  formatLongDate,
+  integrationsIntro,
+  noDescriptionProvided,
+  noProjectDescription,
+  noPaymentPlanSelected,
+  numberedSections,
+  prioritiesIntro,
+  referencedDocumentationLine,
+  relatedIntegrationsLine,
+  scopeIntro,
+  sectionHeading,
+  signaturesIntro,
+  supportsLine,
+} from "@/lib/contract/copy";
+import {
   exhibitsForAttachmentIds,
   formatDocumentRefs,
 } from "@/lib/contract/exhibits";
@@ -25,19 +54,7 @@ import {
   buildPaymentSchedule,
   formatUsd,
 } from "@/lib/contract/payment-schedule";
-import {
-  PROJECT_PRIORITY_LABELS,
-  type AccountStatus,
-} from "@/lib/intake/types";
-
-const PROVIDER_NAME = "Helping Hand AI Solutions";
-const PROVIDER_SHORT = "HHAIS";
-
-const ACCOUNT_STATUS_LABELS: Record<AccountStatus, string> = {
-  existing: "Existing account",
-  needs_creation: "Needs to be created",
-  unknown: "To be confirmed",
-};
+import { PROJECT_PRIORITY_LABELS } from "@/lib/intake/types";
 
 const styles = StyleSheet.create({
   page: {
@@ -139,19 +156,6 @@ const styles = StyleSheet.create({
   },
 });
 
-function formatLongDate(value: string | Date) {
-  return new Intl.DateTimeFormat("en-US", {
-    month: "long",
-    day: "numeric",
-    year: "numeric",
-  }).format(typeof value === "string" ? new Date(value) : value);
-}
-
-function displayValue(value: string, fallback = "—") {
-  const trimmed = value.trim();
-  return trimmed || fallback;
-}
-
 function stripMarkdown(markdown: string): string {
   return markdown
     .replace(/```[\s\S]*?```/g, " ")
@@ -188,7 +192,7 @@ export async function generateExecutedPdf(
     snapshot;
   const clientName = displayValue(
     business.legalName || business.name,
-    "the Client",
+    FALLBACK.client,
   );
   const payment = buildPaymentSchedule(
     project.fee,
@@ -200,10 +204,20 @@ export async function generateExecutedPdf(
     integrations.map((integration) => [integration.id, integration]),
   );
   const featuresById = new Map(features.map((feature) => [feature.id, feature]));
-  const generalDocumentRef = formatDocumentRefs(
-    exhibitsForAttachmentIds(
-      exhibits,
-      snapshot.generalAttachments.map((attachment) => attachment.id),
+  const hasIntegrations = integrations.length > 0;
+  const hasNotes = Boolean(project.additionalNotesMarkdown.trim());
+  const hasExhibits = exhibits.length > 0;
+  const sections = numberedSections(hasIntegrations, hasNotes, hasExhibits);
+  const terms = contractTerms({
+    scopeSection: sections.scope,
+    appendixSection: hasExhibits ? sections.exhibits : null,
+  });
+  const generalDocumentRef = referencedDocumentationLine(
+    formatDocumentRefs(
+      exhibitsForAttachmentIds(
+        exhibits,
+        snapshot.generalAttachments.map((attachment) => attachment.id),
+      ),
     ),
   );
 
@@ -214,31 +228,30 @@ export async function generateExecutedPdf(
   const doc = createElement(
     Document,
     {
-      title: `Project Agreement — ${clientName}`,
+      title: `${DOCUMENT_TITLE} — ${clientName}`,
       author: PROVIDER_NAME,
-      subject: "Executed Statement of Work",
+      subject: `Executed ${DOCUMENT_KIND}`,
     },
     createElement(
       Page,
       { size: "LETTER", style: styles.page },
-      createElement(Text, { style: styles.subtitle }, "Statement of Work"),
-      createElement(Text, { style: styles.title }, "Project Agreement"),
+      createElement(Text, { style: styles.subtitle }, DOCUMENT_KIND),
+      createElement(Text, { style: styles.title }, DOCUMENT_TITLE),
       createElement(
         Text,
         { style: styles.meta },
         `Executed copy · Prepared for ${clientName}`,
       ),
-      createElement(
-        Text,
-        { style: styles.intro },
-        `This agreement sets out the work ${PROVIDER_SHORT} will deliver for ${clientName}. The features below are the contracted deliverables and the basis for acceptance.`,
-      ),
+      createElement(Text, { style: styles.intro }, contractLede(clientName)),
 
-      // Parties
       createElement(
         View,
         { style: styles.section },
-        createElement(Text, { style: styles.heading }, "1. Parties"),
+        createElement(
+          Text,
+          { style: styles.heading },
+          sectionHeading(sections.parties, SECTION_TITLE.parties),
+        ),
         createElement(
           View,
           { style: styles.parties },
@@ -273,11 +286,14 @@ export async function generateExecutedPdf(
         ),
       ),
 
-      // Project
       createElement(
         View,
         { style: styles.section },
-        createElement(Text, { style: styles.heading }, "2. Project"),
+        createElement(
+          Text,
+          { style: styles.heading },
+          sectionHeading(sections.project, SECTION_TITLE.project),
+        ),
         createElement(
           Text,
           { style: styles.body },
@@ -289,43 +305,36 @@ export async function generateExecutedPdf(
               { style: styles.body },
               stripMarkdown(project.descriptionMarkdown),
             )
-          : createElement(
-              Text,
-              { style: styles.muted },
-              "No project description recorded.",
-            ),
+          : createElement(Text, { style: styles.muted }, noProjectDescription()),
         generalDocumentRef
-          ? createElement(
-              Text,
-              { style: styles.muted },
-              `Referenced documentation: ${generalDocumentRef}`,
-            )
+          ? createElement(Text, { style: styles.muted }, generalDocumentRef)
           : null,
       ),
 
-      // Scope
       createElement(
         View,
         { style: styles.section },
-        createElement(Text, { style: styles.heading }, "3. Scope of work"),
         createElement(
           Text,
-          { style: styles.body },
-          `${PROVIDER_SHORT} will design, build, and deliver the following features. Work not listed is out of scope unless agreed in writing.`,
+          { style: styles.heading },
+          sectionHeading(sections.scope, SECTION_TITLE.scope),
         ),
+        createElement(Text, { style: styles.body }, scopeIntro()),
         ...features.map((feature, index) => {
-          const related = feature.integrationIds
-            .map((id) => integrationsById.get(id)?.name)
-            .filter(Boolean);
-          const documentRef = formatDocumentRefs(
-            exhibitsForAttachmentIds(
-              exhibits,
-              feature.attachments.map((attachment) => attachment.id),
-            ),
-          );
           const extras = [
-            related.length > 0 ? `Integrations: ${related.join(", ")}` : "",
-            documentRef ? `Referenced documentation: ${documentRef}` : "",
+            relatedIntegrationsLine(
+              feature.integrationIds
+                .map((id) => integrationsById.get(id)?.name)
+                .filter((name): name is string => Boolean(name)),
+            ),
+            referencedDocumentationLine(
+              formatDocumentRefs(
+                exhibitsForAttachmentIds(
+                  exhibits,
+                  feature.attachments.map((attachment) => attachment.id),
+                ),
+              ),
+            ),
           ].filter(Boolean);
           return createElement(
             View,
@@ -333,14 +342,14 @@ export async function generateExecutedPdf(
             createElement(
               Text,
               { style: styles.itemTitle },
-              `3.${index + 1}  ${displayValue(feature.name, "Untitled feature")}`,
+              clauseTitle(sections.scope, index, feature.name),
             ),
             createElement(
               Text,
               null,
               feature.descriptionMarkdown.trim()
                 ? stripMarkdown(feature.descriptionMarkdown)
-                : "No description provided.",
+                : noDescriptionProvided(),
             ),
             extras.length > 0
               ? createElement(Text, { style: styles.muted }, extras.join(" · "))
@@ -349,39 +358,35 @@ export async function generateExecutedPdf(
         }),
       ),
 
-      // Integrations
-      integrations.length > 0
+      hasIntegrations
         ? createElement(
             View,
             { style: styles.section },
             createElement(
               Text,
               { style: styles.heading },
-              "4. Integrations and third-party services",
+              sectionHeading(sections.integrations, SECTION_TITLE.integrations),
             ),
-            createElement(
-              Text,
-              { style: styles.body },
-              "These services are required to deliver the features above. Unless stated otherwise, the Client owns the accounts; third-party fees are not included in the project fee.",
-            ),
+            createElement(Text, { style: styles.body }, integrationsIntro()),
             ...integrations.map((integration) => {
-              const related = integration.featureIds
-                .map((id) => featuresById.get(id)?.name)
-                .filter(Boolean);
-              const documentRef = formatDocumentRefs(
-                exhibitsForAttachmentIds(
-                  exhibits,
-                  integration.attachments.map((attachment) => attachment.id),
-                ),
-              );
               const extras = [
-                `Account: ${ACCOUNT_STATUS_LABELS[integration.accountStatus]}${
-                  integration.accountEmail.trim()
-                    ? ` · ${integration.accountEmail}`
-                    : ""
-                }`,
-                related.length > 0 ? `Supports: ${related.join(", ")}` : "",
-                documentRef ? `Referenced documentation: ${documentRef}` : "",
+                accountStatusLine(
+                  integration.accountStatus,
+                  integration.accountEmail,
+                ),
+                supportsLine(
+                  integration.featureIds
+                    .map((id) => featuresById.get(id)?.name)
+                    .filter((name): name is string => Boolean(name)),
+                ),
+                referencedDocumentationLine(
+                  formatDocumentRefs(
+                    exhibitsForAttachmentIds(
+                      exhibits,
+                      integration.attachments.map((attachment) => attachment.id),
+                    ),
+                  ),
+                ),
               ].filter(Boolean);
               return createElement(
                 View,
@@ -389,7 +394,10 @@ export async function generateExecutedPdf(
                 createElement(
                   Text,
                   { style: styles.itemTitle },
-                  displayValue(integration.name, "Untitled integration"),
+                  displayValue(
+                    integration.name,
+                    FALLBACK.untitledIntegration,
+                  ),
                 ),
                 integration.descriptionMarkdown.trim()
                   ? createElement(
@@ -404,21 +412,20 @@ export async function generateExecutedPdf(
           )
         : null,
 
-      // Fee
       createElement(
         View,
         { style: styles.section },
         createElement(
           Text,
           { style: styles.heading },
-          `${integrations.length > 0 ? "5" : "4"}. Fee and payment`,
+          sectionHeading(sections.fee, SECTION_TITLE.fee),
         ),
         createElement(
           Text,
           { style: styles.body },
           `Project fee: ${
-            payment.total == null ? "To be determined" : formatUsd(payment.total)
-          } · Payment plan: ${payment.plan?.name ?? "No payment plan selected"}`,
+            payment.total == null ? feeToBeDetermined() : formatUsd(payment.total)
+          } · Payment plan: ${payment.plan?.name ?? noPaymentPlanSelected()}`,
         ),
         payment.plan
           ? createElement(Text, { style: styles.body }, payment.plan.description)
@@ -431,23 +438,18 @@ export async function generateExecutedPdf(
             createElement(Text, null, formatUsd(installment.amount)),
           ),
         ),
-        createElement(
-          Text,
-          { style: styles.body },
-          "Work begins after signing and receipt of any amount due upon signing. Custom deliverables transfer to the Client upon payment in full.",
-        ),
+        createElement(Text, { style: styles.body }, feeCommencement()),
       ),
 
-      // Priorities
       createElement(
         View,
         { style: styles.section },
-        createElement(Text, { style: styles.heading }, "Delivery priorities"),
         createElement(
           Text,
-          { style: styles.body },
-          `If trade-offs are required, ${PROVIDER_SHORT} will follow this ranking (1 = highest):`,
+          { style: styles.heading },
+          sectionHeading(sections.priorities, SECTION_TITLE.priorities),
         ),
+        createElement(Text, { style: styles.body }, prioritiesIntro()),
         ...project.priorities.map((priority, index) =>
           createElement(
             Text,
@@ -457,15 +459,14 @@ export async function generateExecutedPdf(
         ),
       ),
 
-      // Notes
-      project.additionalNotesMarkdown.trim()
+      hasNotes
         ? createElement(
             View,
             { style: styles.section },
             createElement(
               Text,
               { style: styles.heading },
-              "Additional notes and exclusions",
+              sectionHeading(sections.notes, SECTION_TITLE.notes),
             ),
             createElement(
               Text,
@@ -475,89 +476,58 @@ export async function generateExecutedPdf(
           )
         : null,
 
-      // Appendix A
-      exhibits.length > 0
+      hasExhibits
         ? createElement(
             View,
             { style: styles.section },
-            createElement(Text, { style: styles.heading }, APPENDIX_A_TITLE),
+            createElement(
+              Text,
+              { style: styles.heading },
+              sectionHeading(sections.exhibits, SECTION_TITLE.exhibits),
+            ),
             ...APPENDIX_A_INTRO.map((paragraph) =>
               createElement(Text, { key: paragraph, style: styles.body }, paragraph),
             ),
             createElement(
               Text,
               { style: styles.itemTitle },
-              "Referenced Documents",
+              REFERENCED_DOCUMENTS_HEADING,
             ),
             ...exhibits.map((exhibit) =>
               createElement(
                 Text,
                 { key: exhibit.attachmentId, style: styles.bullet },
-                `${exhibit.reference}: ${exhibit.fileName} (${exhibitScopeLabel(exhibit)})`,
+                exhibitListLine(exhibit),
               ),
             ),
-            ...appendixAClosing(PROVIDER_NAME).map((paragraph) =>
+            ...appendixAClosing().map((paragraph) =>
               createElement(Text, { key: paragraph, style: styles.body }, paragraph),
             ),
           )
         : null,
 
-      // Terms
       createElement(
         View,
         { style: styles.section },
-        createElement(Text, { style: styles.heading }, "Terms"),
         createElement(
           Text,
-          { style: styles.bullet },
-          `• The features in the Scope of work section are the complete initial scope. Material changes may affect fee or timeline and require written agreement.`,
+          { style: styles.heading },
+          sectionHeading(sections.terms, SECTION_TITLE.terms),
         ),
-        createElement(
-          Text,
-          { style: styles.bullet },
-          `• The Client will provide branding, content, account access, approvals, and timely feedback needed to complete the listed features.`,
-        ),
-        createElement(
-          Text,
-          { style: styles.bullet },
-          `• Third-party products, licenses, domains, and usage fees are the Client's responsibility unless expressly included.`,
-        ),
-        createElement(
-          Text,
-          { style: styles.bullet },
-          `• ${PROVIDER_SHORT} will deliver the described features in a professional manner. Acceptance is based on the feature descriptions herein, not on unlisted discussions.`,
-        ),
-        createElement(
-          Text,
-          { style: styles.bullet },
-          `• ${PROVIDER_SHORT} will perform the Services based on this Agreement, the agreed Scope of Work, and the Client-provided documentation${
-            exhibits.length > 0
-              ? ` listed in ${APPENDIX_A_TITLE}`
-              : " submitted through the project intake form"
-          }. Requests that materially differ from or add to those materials may be treated as a change in scope.`,
-        ),
-        createElement(
-          Text,
-          { style: styles.bullet },
-          `• Upon payment in full, the Client owns the custom code and deliverables produced for this project. ${PROVIDER_SHORT} may reuse general methods, libraries, and know-how that are not unique to the Client.`,
-        ),
-        createElement(
-          Text,
-          { style: styles.bullet },
-          `• Either party may pause or end the engagement for material breach after written notice and a reasonable opportunity to cure. Amounts owed for work already performed remain due.`,
+        ...terms.map((term) =>
+          createElement(Text, { key: term, style: styles.bullet }, `• ${term}`),
         ),
       ),
 
-      // Signatures
       createElement(
         View,
         { style: styles.section },
-        createElement(Text, { style: styles.heading }, "Signatures"),
         createElement(
           Text,
-          { style: styles.body },
-          `By signing, the parties agree that ${PROVIDER_SHORT} will deliver the features above for the stated fee, and that those features define the customer's expectations.`,
+          { style: styles.heading },
+          sectionHeading(sections.signatures, SECTION_TITLE.signatures),
         ),
+        createElement(Text, { style: styles.body }, signaturesIntro()),
         createElement(
           View,
           { style: styles.sigGrid, wrap: false },
@@ -574,7 +544,7 @@ export async function generateExecutedPdf(
               null,
               contract.hhais.signerName ?? developedBy,
             ),
-            createElement(Text, { style: styles.muted }, "Founder"),
+            createElement(Text, { style: styles.muted }, PROVIDER_SIGNATORY_TITLE),
             createElement(
               Text,
               { style: styles.muted },

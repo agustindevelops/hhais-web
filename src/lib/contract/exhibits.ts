@@ -1,22 +1,6 @@
 import type { IntakeSnapshot } from "@/lib/intake/types";
 import type { ContractExhibit } from "@/lib/contract/types";
 
-export const APPENDIX_A_TITLE = "Appendix A — Client-Provided Documentation";
-
-export const APPENDIX_A_INTRO = [
-  "The following documents were submitted by the Client through the project intake form and are incorporated into this Agreement by reference.",
-  "These documents represent the information, specifications, requirements, examples, and other materials provided by the Client for the purposes of defining and completing the Project.",
-] as const;
-
-export function appendixAClosing(providerName: string): string[] {
-  return [
-    `By signing this Agreement, the Client confirms that the documents listed above are the documentation they intend ${providerName} to rely upon when determining the Project requirements, scope, design, functionality, and deliverables.`,
-    `${providerName} will perform the Services based on the information contained in this Agreement, the agreed Scope of Work, and the referenced documentation above.`,
-    "Any request that materially differs from or adds to the requirements contained in these documents may be treated as a change in scope and may require additional fees, timeline adjustments, or a written amendment to this Agreement.",
-    "If there is a conflict between the referenced documentation and the main terms of this Agreement, the main Agreement and approved Scope of Work will control unless otherwise stated in writing.",
-  ];
-}
-
 function appendixReference(index: number): string {
   return `A.${index + 1}`;
 }

@@ -3,13 +3,44 @@ import type { ReactNode } from "react";
 import PrintButton from "@/app/contract/PrintButton";
 import MarkdownBody from "@/app/contract/MarkdownBody";
 import {
+  APPENDIX_A_INTRO,
+  DOCUMENT_KIND,
+  DOCUMENT_TITLE,
+  FALLBACK,
+  PROVIDER_NAME,
+  PROVIDER_SHORT,
+  PROVIDER_SIGNATORY_TITLE,
+  REFERENCED_DOCUMENTS_HEADING,
+  SECTION_TITLE,
+  accountStatusLine,
+  appendixAClosing,
+  clauseTitle,
+  contractLede,
+  contractTerms,
+  displayValue,
+  feeCommencement,
+  feeToBeDetermined,
+  formatLongDate,
+  integrationsIntro,
+  noDescriptionProvided,
+  noFeaturesRecorded,
+  noPaymentPlanSelected,
+  noPaymentPlanYet,
+  noProjectDescription,
+  numberedSections,
+  prioritiesIntro,
+  referencedDocumentationLine,
+  relatedIntegrationsLine,
+  scopeIntro,
+  sectionHeading,
+  signaturesIntro,
+  supportsLine,
+} from "@/lib/contract/copy";
+import {
   buildPaymentSchedule,
   formatUsd,
 } from "@/lib/contract/payment-schedule";
 import {
-  APPENDIX_A_INTRO,
-  APPENDIX_A_TITLE,
-  appendixAClosing,
   exhibitScopeLabel,
   exhibitsForAttachmentIds,
   formatDocumentRefs,
@@ -21,19 +52,9 @@ import type {
 } from "@/lib/contract/types";
 import {
   PROJECT_PRIORITY_LABELS,
-  type AccountStatus,
   type IntakeSnapshot,
 } from "@/lib/intake/types";
 import { developedBy } from "@/common/constants";
-
-const PROVIDER_NAME = "Helping Hand AI Solutions";
-const PROVIDER_SHORT = "HHAIS";
-
-const ACCOUNT_STATUS_LABELS: Record<AccountStatus, string> = {
-  existing: "Existing account",
-  needs_creation: "Needs to be created",
-  unknown: "To be confirmed",
-};
 
 const sectionClass =
   "contract-section space-y-4 rounded-xl border border-default-200 bg-white p-6 shadow-sm print:shadow-none";
@@ -46,19 +67,6 @@ type ContractDocumentProps = {
   signatureActions?: ReactNode;
 };
 
-function formatLongDate(value: Date | string) {
-  return new Intl.DateTimeFormat("en-US", {
-    month: "long",
-    day: "numeric",
-    year: "numeric",
-  }).format(typeof value === "string" ? new Date(value) : value);
-}
-
-function displayValue(value: string, fallback = "—") {
-  const trimmed = value.trim();
-  return trimmed || fallback;
-}
-
 export default function ContractDocument({
   snapshot,
   exhibits,
@@ -70,7 +78,7 @@ export default function ContractDocument({
     snapshot;
   const clientName = displayValue(
     business.legalName || business.name,
-    "the Client",
+    FALLBACK.client,
   );
   const payment = buildPaymentSchedule(
     project.fee,
@@ -90,6 +98,10 @@ export default function ContractDocument({
   const hasNotes = Boolean(project.additionalNotesMarkdown.trim());
   const hasExhibits = exhibits.length > 0;
   const sections = numberedSections(hasIntegrations, hasNotes, hasExhibits);
+  const terms = contractTerms({
+    scopeSection: sections.scope,
+    appendixSection: hasExhibits ? sections.exhibits : null,
+  });
 
   return (
     <div className="contract-doc space-y-6">
@@ -97,10 +109,10 @@ export default function ContractDocument({
         <div className="flex flex-wrap items-start justify-between gap-4 print:gap-2">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary print:tracking-[0.12em]">
-              Statement of Work
+              {DOCUMENT_KIND}
             </p>
             <h1 className="mt-2 text-3xl font-semibold tracking-tight sm:text-4xl print:mt-0.5">
-              Project Agreement
+              {DOCUMENT_TITLE}
             </h1>
             <p className="mt-2 text-sm text-default-600 print:mt-0.5">
               Prepared for {clientName} on {preparedOn}
@@ -113,15 +125,13 @@ export default function ContractDocument({
           <PrintButton />
         </div>
         <p className="contract-lede text-sm leading-relaxed text-default-700">
-          This agreement sets out the work {PROVIDER_SHORT} will deliver for{" "}
-          {clientName}. The features below are the contracted deliverables and
-          the basis for acceptance.
+          {contractLede(clientName)}
         </p>
       </header>
 
       <section className={sectionClass}>
         <h2 className="text-xl font-semibold text-default-900">
-          {sections.parties}. Parties
+          {sectionHeading(sections.parties, SECTION_TITLE.parties)}
         </h2>
         <div className="contract-parties grid gap-4 sm:grid-cols-2">
           <PartyCard
@@ -151,7 +161,7 @@ export default function ContractDocument({
 
       <section className={sectionClass}>
         <h2 className="text-xl font-semibold text-default-900">
-          {sections.project}. Project
+          {sectionHeading(sections.project, SECTION_TITLE.project)}
         </h2>
         <dl className="grid gap-3 sm:grid-cols-2">
           <Detail label="Project name" value={displayValue(project.name)} />
@@ -165,9 +175,7 @@ export default function ContractDocument({
             <MarkdownBody markdown={project.descriptionMarkdown} />
           </div>
         ) : (
-          <p className="text-sm text-default-600">
-            No project description has been recorded yet.
-          </p>
+          <p className="text-sm text-default-600">{noProjectDescription()}</p>
         )}
         <ReferencedDocs
           exhibits={exhibitsForAttachmentIds(
@@ -179,23 +187,19 @@ export default function ContractDocument({
 
       <section className={sectionClass}>
         <h2 className="text-xl font-semibold text-default-900">
-          {sections.scope}. Scope of work
+          {sectionHeading(sections.scope, SECTION_TITLE.scope)}
         </h2>
-        <p className="text-sm leading-relaxed text-default-700">
-          {PROVIDER_SHORT} will design, build, and deliver the following
-          features. Work not listed is out of scope unless agreed in writing.
-        </p>
+        <p className="text-sm leading-relaxed text-default-700">{scopeIntro()}</p>
         {features.length === 0 ? (
-          <p className="text-sm text-default-600">
-            No features have been recorded yet. Complete intake before using
-            this agreement.
-          </p>
+          <p className="text-sm text-default-600">{noFeaturesRecorded()}</p>
         ) : (
           <ol className="space-y-4">
             {features.map((feature, index) => {
-              const relatedIntegrations = feature.integrationIds
-                .map((id) => integrationsById.get(id))
-                .filter((item): item is NonNullable<typeof item> => item != null);
+              const relatedIntegrations = relatedIntegrationsLine(
+                feature.integrationIds
+                  .map((id) => integrationsById.get(id)?.name)
+                  .filter((name): name is string => Boolean(name)),
+              );
               const documentRefs = exhibitsForAttachmentIds(
                 exhibits,
                 feature.attachments.map((attachment) => attachment.id),
@@ -207,22 +211,18 @@ export default function ContractDocument({
                   className="contract-clause space-y-3 rounded-lg border border-default-200 p-4 print:break-inside-avoid"
                 >
                   <h3 className="text-base font-semibold text-default-900">
-                    {sections.scope}.{index + 1}{" "}
-                    {displayValue(feature.name, "Untitled feature")}
+                    {clauseTitle(sections.scope, index, feature.name)}
                   </h3>
                   {feature.descriptionMarkdown.trim() ? (
                     <MarkdownBody markdown={feature.descriptionMarkdown} />
                   ) : (
                     <p className="text-sm text-default-600">
-                      No description provided.
+                      {noDescriptionProvided()}
                     </p>
                   )}
-                  {relatedIntegrations.length > 0 ? (
+                  {relatedIntegrations ? (
                     <p className="text-sm text-default-600">
-                      Related integrations:{" "}
-                      {relatedIntegrations
-                        .map((integration) => integration.name)
-                        .join(", ")}
+                      {relatedIntegrations}
                     </p>
                   ) : null}
                   <ReferencedDocs exhibits={documentRefs} />
@@ -236,18 +236,18 @@ export default function ContractDocument({
       {hasIntegrations ? (
         <section className={sectionClass}>
           <h2 className="text-xl font-semibold text-default-900">
-            {sections.integrations}. Integrations and third-party services
+            {sectionHeading(sections.integrations, SECTION_TITLE.integrations)}
           </h2>
           <p className="text-sm leading-relaxed text-default-700">
-            These services are required to deliver the features above. Unless
-            stated otherwise, the Client owns the accounts; third-party fees
-            are not included in the project fee.
+            {integrationsIntro()}
           </p>
           <ul className="space-y-4">
             {integrations.map((integration) => {
-              const relatedFeatures = integration.featureIds
-                .map((id) => featuresById.get(id))
-                .filter((item): item is NonNullable<typeof item> => item != null);
+              const relatedFeatures = supportsLine(
+                integration.featureIds
+                  .map((id) => featuresById.get(id)?.name)
+                  .filter((name): name is string => Boolean(name)),
+              );
               const documentRefs = exhibitsForAttachmentIds(
                 exhibits,
                 integration.attachments.map((attachment) => attachment.id),
@@ -259,23 +259,22 @@ export default function ContractDocument({
                   className="contract-clause space-y-2 rounded-lg border border-default-200 p-4 print:break-inside-avoid"
                 >
                   <h3 className="text-base font-semibold text-default-900">
-                    {displayValue(integration.name, "Untitled integration")}
+                    {displayValue(
+                      integration.name,
+                      FALLBACK.untitledIntegration,
+                    )}
                   </h3>
                   <p className="text-sm text-default-600">
-                    Account status:{" "}
-                    {ACCOUNT_STATUS_LABELS[integration.accountStatus]}
-                    {integration.accountEmail.trim()
-                      ? ` · ${integration.accountEmail}`
-                      : ""}
+                    {accountStatusLine(
+                      integration.accountStatus,
+                      integration.accountEmail,
+                    )}
                   </p>
                   {integration.descriptionMarkdown.trim() ? (
                     <MarkdownBody markdown={integration.descriptionMarkdown} />
                   ) : null}
-                  {relatedFeatures.length > 0 ? (
-                    <p className="text-sm text-default-600">
-                      Supports:{" "}
-                      {relatedFeatures.map((feature) => feature.name).join(", ")}
-                    </p>
+                  {relatedFeatures ? (
+                    <p className="text-sm text-default-600">{relatedFeatures}</p>
                   ) : null}
                   <ReferencedDocs exhibits={documentRefs} />
                 </li>
@@ -287,26 +286,24 @@ export default function ContractDocument({
 
       <section className={sectionClass}>
         <h2 className="text-xl font-semibold text-default-900">
-          {sections.fee}. Fee and payment
+          {sectionHeading(sections.fee, SECTION_TITLE.fee)}
         </h2>
         <dl className="grid gap-3 sm:grid-cols-2">
           <Detail
             label="Project fee"
             value={
-              payment.total == null ? "To be determined" : formatUsd(payment.total)
+              payment.total == null ? feeToBeDetermined() : formatUsd(payment.total)
             }
           />
           <Detail
             label="Payment plan"
-            value={payment.plan?.name ?? "No payment plan selected"}
+            value={payment.plan?.name ?? noPaymentPlanSelected()}
           />
         </dl>
         {payment.plan ? (
           <p className="text-sm text-default-700">{payment.plan.description}</p>
         ) : (
-          <p className="text-sm text-default-600">
-            A payment plan has not been selected yet.
-          </p>
+          <p className="text-sm text-default-600">{noPaymentPlanYet()}</p>
         )}
         {payment.installments.length > 0 ? (
           <div>
@@ -328,27 +325,22 @@ export default function ContractDocument({
               <li className="flex items-center justify-between gap-4 bg-default-50 px-3 py-2 text-sm">
                 <span className="font-medium text-default-900">Total</span>
                 <span className="font-semibold text-default-900">
-                  {payment.total == null ? "—" : formatUsd(payment.total)}
+                  {payment.total == null ? FALLBACK.empty : formatUsd(payment.total)}
                 </span>
               </li>
             </ul>
           </div>
         ) : null}
         <p className="text-sm leading-relaxed text-default-700">
-          Work begins after signing and receipt of any amount due upon
-          signing. Custom deliverables transfer to the Client upon payment in
-          full.
+          {feeCommencement()}
         </p>
       </section>
 
       <section className={sectionClass}>
         <h2 className="text-xl font-semibold text-default-900">
-          {sections.priorities}. Delivery priorities
+          {sectionHeading(sections.priorities, SECTION_TITLE.priorities)}
         </h2>
-        <p className="text-sm text-default-700">
-          If trade-offs are required, {PROVIDER_SHORT} will follow this ranking
-          (1 = highest):
-        </p>
+        <p className="text-sm text-default-700">{prioritiesIntro()}</p>
         <ol className="space-y-2">
           {project.priorities.map((priority, index) => (
             <li
@@ -364,7 +356,7 @@ export default function ContractDocument({
       {hasNotes ? (
         <section className={sectionClass}>
           <h2 className="text-xl font-semibold text-default-900">
-            {sections.notes}. Additional notes and exclusions
+            {sectionHeading(sections.notes, SECTION_TITLE.notes)}
           </h2>
           <MarkdownBody markdown={project.additionalNotesMarkdown} />
         </section>
@@ -373,7 +365,7 @@ export default function ContractDocument({
       {hasExhibits ? (
         <section className={sectionClass}>
           <h2 className="text-xl font-semibold text-default-900">
-            {sections.exhibits}. {APPENDIX_A_TITLE}
+            {sectionHeading(sections.exhibits, SECTION_TITLE.exhibits)}
           </h2>
           {APPENDIX_A_INTRO.map((paragraph) => (
             <p
@@ -385,7 +377,7 @@ export default function ContractDocument({
           ))}
           <div>
             <h3 className="text-sm font-medium text-default-900">
-              Referenced Documents
+              {REFERENCED_DOCUMENTS_HEADING}
             </h3>
             <ul className="contract-exhibits mt-2 divide-y divide-default-200 overflow-hidden rounded-md border border-default-200">
               {exhibits.map((exhibit) => (
@@ -414,7 +406,7 @@ export default function ContractDocument({
               ))}
             </ul>
           </div>
-          {appendixAClosing(PROVIDER_NAME).map((paragraph) => (
+          {appendixAClosing().map((paragraph) => (
             <p
               key={paragraph}
               className="text-sm leading-relaxed text-default-700"
@@ -427,65 +419,27 @@ export default function ContractDocument({
 
       <section className={sectionClass}>
         <h2 className="text-xl font-semibold text-default-900">
-          {sections.terms}. Terms
+          {sectionHeading(sections.terms, SECTION_TITLE.terms)}
         </h2>
         <ul className="list-disc space-y-2 pl-5 text-sm leading-relaxed text-default-700 print:space-y-1">
-          <li>
-            The features in Section {sections.scope} are the complete initial
-            scope. Material changes may affect fee or timeline and require
-            written agreement.
-          </li>
-          <li>
-            The Client will provide branding, content, account access,
-            approvals, and timely feedback needed to complete the listed
-            features.
-          </li>
-          <li>
-            Third-party products, licenses, domains, and usage fees are the
-            Client&apos;s responsibility unless expressly included.
-          </li>
-          <li>
-            {PROVIDER_SHORT} will deliver the described features in a
-            professional manner. Acceptance is based on the feature
-            descriptions herein, not on unlisted discussions.
-          </li>
-          <li>
-            {PROVIDER_SHORT} will perform the Services based on this Agreement,
-            the agreed Scope of Work, and the Client-provided documentation
-            {hasExhibits
-              ? ` listed in ${APPENDIX_A_TITLE} (Section ${sections.exhibits})`
-              : " submitted through the project intake form"}
-            . Requests that materially differ from or add to those materials may
-            be treated as a change in scope.
-          </li>
-          <li>
-            Upon payment in full, the Client owns the custom code and
-            deliverables produced for this project. {PROVIDER_SHORT} may
-            reuse general methods, libraries, and know-how that are not unique
-            to the Client.
-          </li>
-          <li>
-            Either party may pause or end the engagement for material breach
-            after written notice and a reasonable opportunity to cure. Amounts
-            owed for work already performed remain due.
-          </li>
+          {terms.map((term) => (
+            <li key={term}>{term}</li>
+          ))}
         </ul>
       </section>
 
       <section className={sectionClass}>
         <h2 className="text-xl font-semibold text-default-900">
-          {sections.signatures}. Signatures
+          {sectionHeading(sections.signatures, SECTION_TITLE.signatures)}
         </h2>
         <p className="text-sm leading-relaxed text-default-700">
-          By signing, the parties agree that {PROVIDER_SHORT} will deliver the
-          features above for the stated fee, and that those features define
-          the customer&apos;s expectations.
+          {signaturesIntro()}
         </p>
         <div className="contract-sigs grid gap-8 sm:grid-cols-2">
           <SignatureBlock
             party={PROVIDER_NAME}
             fallbackName={developedBy}
-            title="Founder"
+            title={PROVIDER_SIGNATORY_TITLE}
             signature={contract?.hhais ?? null}
           />
           <SignatureBlock
@@ -508,28 +462,6 @@ export default function ContractDocument({
       </section>
     </div>
   );
-}
-
-function numberedSections(
-  hasIntegrations: boolean,
-  hasNotes: boolean,
-  hasExhibits: boolean,
-) {
-  let next = 1;
-  const take = () => next++;
-
-  return {
-    parties: take(),
-    project: take(),
-    scope: take(),
-    integrations: hasIntegrations ? take() : 0,
-    fee: take(),
-    priorities: take(),
-    notes: hasNotes ? take() : 0,
-    exhibits: hasExhibits ? take() : 0,
-    terms: take(),
-    signatures: take(),
-  };
 }
 
 function PartyCard({
@@ -571,15 +503,12 @@ function Detail({ label, value }: { label: string; value: string }) {
 }
 
 function ReferencedDocs({ exhibits }: { exhibits: ContractExhibit[] }) {
-  if (exhibits.length === 0) {
+  const line = referencedDocumentationLine(formatDocumentRefs(exhibits));
+  if (!line) {
     return null;
   }
 
-  return (
-    <p className="text-sm text-default-600">
-      Referenced documentation: {formatDocumentRefs(exhibits)}
-    </p>
-  );
+  return <p className="text-sm text-default-600">{line}</p>;
 }
 
 function SignatureBlock({
