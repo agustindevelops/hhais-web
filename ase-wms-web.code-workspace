@@ -1,0 +1,11 @@
+{
+	"folders": [
+		{
+			"path": "../ase/ase-wms-web"
+		},
+		{
+			"path": "../ase/ase-wms-app"
+		}
+	],
+	"settings": {}
+}
