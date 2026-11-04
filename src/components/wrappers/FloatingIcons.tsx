@@ -2,7 +2,7 @@
 
 import IconifyIcon from './IconifyIcon'
 import React from 'react'
-import { motion, useAnimationFrame } from 'framer-motion'
+import { useAnimationFrame } from 'framer-motion'
 
 type FloatingIconsProps = {
   floatingIcons: { icon: string; label: string }[]
@@ -28,18 +28,18 @@ const FloatingIcons = ({ floatingIcons, children }: FloatingIconsProps) => {
           {floatingIcons.map((item, idx) => {
             const iconAngle =
               (idx / floatingIcons.length) * 2 * Math.PI + baseAngle
-            const x = Math.cos(iconAngle) * radius
-            const y = Math.sin(iconAngle) * radius
+            const x = Math.round(Math.cos(iconAngle) * radius * 100) / 100
+            const y = Math.round(Math.sin(iconAngle) * radius * 100) / 100
+            const xOffset = x < 0 ? `- ${Math.abs(x)}px` : `+ ${x}px`
+            const yOffset = y < 0 ? `- ${Math.abs(y)}px` : `+ ${y}px`
             return (
-              <motion.div
+              <div
                 key={`${item.icon}-${idx}`}
-                className="absolute flex flex-col items-center"
+                className="absolute z-[1] flex flex-col items-center drop-shadow-[0_2px_8px_rgba(0,0,0,0.15)]"
                 style={{
-                  left: `calc(50% + ${x}px)`,
-                  top: `calc(50% + ${y}px)`,
+                  left: `calc(50% ${xOffset})`,
+                  top: `calc(50% ${yOffset})`,
                   transform: 'translate(-50%, -50%)',
-                  filter: 'drop-shadow(0 2px 8px rgba(0,0,0,0.15))',
-                  zIndex: 1,
                 }}>
                 <div className="rounded-full border border-white/10 bg-default-900/80 p-4 shadow-lg">
                   <IconifyIcon
@@ -50,7 +50,7 @@ const FloatingIcons = ({ floatingIcons, children }: FloatingIconsProps) => {
                 <span className="mt-2 text-center text-xs text-default-200">
                   {item.label}
                 </span>
-              </motion.div>
+              </div>
             )
           })}
         </div>

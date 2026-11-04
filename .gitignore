@@ -32,6 +32,8 @@ yarn-error.log*
 # local env files
 .env
 .env*.local
+.env.prod
+.env.production
 
 # prisma
 /generated
@@ -40,3 +42,10 @@ yarn-error.log*
 .vercel
 
 ase-wms-web.code-workspace
+.env*
+
+# AI skills and agent configs
+.agents/
+.claude/
+.windsurf/
+skills-lock.json

@@ -207,3 +207,11 @@ model Attachment {
   @@index([storagePath])
   @@index([status])
 }
+
+model User {
+  id           String   @id @default(cuid())
+  username     String   @unique
+  passwordHash String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}

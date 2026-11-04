@@ -5,6 +5,9 @@
 		},
 		{
 			"path": "../ase/ase-wms-app"
+		},
+		{
+			"path": "../ase/aniah-social-events"
 		}
 	],
 	"settings": {}

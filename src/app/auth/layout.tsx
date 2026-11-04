@@ -1,34 +1,33 @@
-"use client"
-import { currentYear } from "@/common/constants"
-import Background2 from "@/components/Background2"
-import type { ChildrenType } from "@/types/other"
-import Link from "next/link"
-import { useEffect } from "react"
+import type { Metadata } from "next";
 
-const AuthLayout = ({ children }: ChildrenType) => {
-  useEffect(() => {
-    document.body.classList.add('bg-slate-900', 'relative', 'h-full')
-    return (() => {
-      document.body.classList.remove('bg-slate-900', 'relative', 'h-full')
-    })
-  }, [])
+import { currentYear } from "@/common/constants";
+import Background2 from "@/components/Background2";
+import type { ChildrenType } from "@/types/other";
+
+import AuthBodyClass from "./AuthBodyClass";
+
+export const metadata: Metadata = {
+  robots: {
+    index: false,
+    follow: false,
+  },
+};
+
+export default function AuthLayout({ children }: ChildrenType) {
   return (
     <>
+      <AuthBodyClass />
       <Background2 />
-      <section className="flex items-center py-6 px-0 lg:p-10 w-full lg:h-screen">
-        <div className="container">
-          {children}
-        </div>
+      <section className="flex w-full items-center px-0 py-6 lg:h-screen lg:p-10">
+        <div className="container">{children}</div>
       </section>
-      <footer className="2xl:fixed bottom-0 start-0 end-0 py-3">
+      <footer className="bottom-0 start-0 end-0 py-3 2xl:fixed">
         <div className="container">
-          <p className="text-base font-medium text-center text-default-200">
-            {currentYear} © WebAi - <Link href="">Design &amp; Crafted ❤️ by Coderthemes</Link>
+          <p className="text-center text-base font-medium text-default-200">
+            {currentYear} © Helping Hand AI Solutions
           </p>
         </div>
       </footer>
     </>
-  )
+  );
 }
-
-export default AuthLayout
