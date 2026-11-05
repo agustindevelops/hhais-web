@@ -29,6 +29,143 @@ File: style.scss
   --color-default-950: #020617;
 }
 
+:root {
+  --field-bg: #ffffff;
+  --field-text: #0f172a;
+  --field-placeholder: #475569;
+  --field-border: #64748b;
+  --field-label: #e2e8f0;
+  --field-hint: #cbd5e1;
+  --field-error: #f87171;
+  --field-radius: 0.5rem;
+  --field-ring: #16a34a;
+}
+
+.field-label,
+.field-legend {
+  display: block;
+  margin-bottom: 0.375rem;
+  color: var(--field-label);
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 1.5;
+}
+
+.field-legend {
+  margin-bottom: 0.5rem;
+}
+
+.field-control {
+  display: block;
+  width: 100%;
+  border: 1px solid var(--field-border);
+  border-radius: var(--field-radius);
+  background-color: var(--field-bg);
+  color: var(--field-text);
+  padding: 0.5rem 0.75rem;
+  font-family: inherit;
+  font-size: 1rem;
+  line-height: 1.5;
+  box-shadow: 0 1px 2px rgb(15 23 42 / 0.05);
+}
+
+.field-control::placeholder {
+  color: var(--field-placeholder);
+  opacity: 1;
+}
+
+.field-control:focus {
+  outline: none;
+  border-color: var(--field-ring);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--field-ring) 30%, transparent);
+}
+
+.field-control[aria-invalid="true"] {
+  border-color: #b91c1c;
+}
+
+.field-control[aria-invalid="true"]:focus {
+  box-shadow: 0 0 0 3px color-mix(in srgb, #b91c1c 25%, transparent);
+}
+
+.field-control:disabled {
+  cursor: not-allowed;
+  background-color: #f1f5f9;
+  color: #334155;
+}
+
+select.field-control {
+  appearance: none;
+  padding-right: 2.5rem;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='none' stroke='%23334155' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m4 6 4 4 4-4'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  background-size: 1rem;
+}
+
+.field-frame {
+  overflow: hidden;
+  border: 1px solid var(--field-border);
+  border-radius: var(--field-radius);
+  background: var(--field-bg);
+  color: var(--field-text);
+  box-shadow: 0 1px 2px rgb(15 23 42 / 0.05);
+}
+
+.field-frame:focus-within {
+  border-color: var(--field-ring);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--field-ring) 30%, transparent);
+}
+
+.field-hint,
+.field-error {
+  margin-top: 0.375rem;
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+.field-hint {
+  color: var(--field-hint);
+}
+
+.field-error,
+.field-required {
+  color: var(--field-error);
+}
+
+.field-check,
+.field-radio {
+  width: 1.25rem;
+  height: 1.25rem;
+  flex-shrink: 0;
+  margin-top: 0.15rem;
+  border: 1px solid var(--field-border);
+  background: var(--field-bg);
+  accent-color: var(--field-ring);
+}
+
+.field-check {
+  border-radius: 0.25rem;
+}
+
+.field-radio {
+  border-radius: 999px;
+}
+
+.field-check:focus,
+.field-radio:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--field-ring) 30%, transparent);
+}
+
+.field-adornment {
+  color: var(--field-placeholder);
+}
+
+.field-adornment:hover {
+  color: var(--field-text);
+}
+
 /* Container: center + responsive padding (matches v3 tailwind.config) */
 @utility container {
   width: 100%;

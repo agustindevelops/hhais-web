@@ -4,12 +4,8 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 
 import MarkdownEditor from "@/app/intake/components/MarkdownEditor";
+import { Field, SelectField, TextAreaField, TextField } from "@/components/fields";
 import { slugify } from "@/lib/blog/slug";
-
-const fieldClass =
-  "block w-full rounded-lg border border-white/10 bg-default-950/60 px-3 py-2 text-sm text-white outline-none transition placeholder:text-default-500 focus:border-primary focus:ring-2 focus:ring-primary/30";
-
-const labelClass = "text-sm font-medium text-white";
 
 export type BlogFormValues = {
   id: string;
@@ -139,84 +135,61 @@ export default function BlogForm({ mode, blog }: BlogFormProps) {
         }
       }}
     >
-      <div className="space-y-2">
-        <label htmlFor="blog-title" className={labelClass}>
-          Title
-        </label>
-        <input
-          id="blog-title"
-          value={title}
-          onChange={(event) => onTitleChange(event.target.value)}
-          required
-          maxLength={160}
-          className={fieldClass}
-          placeholder="Post title"
-        />
-      </div>
+      <TextField
+        id="blog-title"
+        label="Title"
+        value={title}
+        onChange={(event) => onTitleChange(event.target.value)}
+        required
+        maxLength={160}
+        placeholder="Post title"
+      />
 
-      <div className="space-y-2">
-        <label htmlFor="blog-slug" className={labelClass}>
-          Slug
-        </label>
-        <input
-          id="blog-slug"
-          value={slug}
-          onChange={(event) => {
-            setSlugTouched(true);
-            setSlug(event.target.value);
-          }}
-          onBlur={() => setSlug((current) => slugify(current))}
-          required
-          maxLength={80}
-          className={fieldClass}
-          placeholder="post-title"
-        />
-        <p className="text-xs text-default-400">
-          Unique among your posts. Letters, numbers, and hyphens.
-        </p>
-      </div>
+      <TextField
+        id="blog-slug"
+        label="Slug"
+        value={slug}
+        onChange={(event) => {
+          setSlugTouched(true);
+          setSlug(event.target.value);
+        }}
+        onBlur={() => setSlug((current) => slugify(current))}
+        required
+        maxLength={80}
+        placeholder="post-title"
+        hint="Use letters, numbers, and hyphens. Each post needs its own slug."
+      />
 
-      <div className="space-y-2">
-        <label htmlFor="blog-excerpt" className={labelClass}>
-          Excerpt
-        </label>
-        <textarea
-          id="blog-excerpt"
-          value={excerpt}
-          onChange={(event) => setExcerpt(event.target.value)}
-          maxLength={300}
-          rows={3}
-          className={fieldClass}
-          placeholder="Short summary"
-        />
-      </div>
+      <TextAreaField
+        id="blog-excerpt"
+        label="Excerpt"
+        value={excerpt}
+        onChange={(event) => setExcerpt(event.target.value)}
+        maxLength={300}
+        rows={3}
+        placeholder="Short summary"
+      />
 
-      <div className="space-y-2">
-        <label htmlFor="blog-content" className={labelClass}>
-          Content
-        </label>
-        <MarkdownEditor
-          id="blog-content"
-          value={contentMarkdown}
-          onChange={setContentMarkdown}
-          placeholder="Write the post"
-        />
-      </div>
+      <Field id="blog-content" label="Content">
+        {({ id }) => (
+          <MarkdownEditor
+            id={id}
+            value={contentMarkdown}
+            onChange={setContentMarkdown}
+            placeholder="Write the post"
+          />
+        )}
+      </Field>
 
-      <div className="space-y-2">
-        <label htmlFor="blog-status" className={labelClass}>
-          Status
-        </label>
-        <select
-          id="blog-status"
-          value={status}
-          onChange={(event) => setStatus(event.target.value)}
-          className={fieldClass}
-        >
-          <option value="draft">Draft</option>
-          <option value="published">Published</option>
-        </select>
-      </div>
+      <SelectField
+        id="blog-status"
+        label="Status"
+        value={status}
+        onChange={(event) => setStatus(event.target.value)}
+      >
+        <option value="draft">Draft</option>
+        <option value="published">Published</option>
+      </SelectField>
 
       {error ? <p className="text-sm text-red-300">{error}</p> : null}
       {statusMessage ? (
