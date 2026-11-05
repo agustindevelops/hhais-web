@@ -9,10 +9,12 @@ import SignOutButton from "./SignOutButton";
 export default async function AdminShell({
   title,
   backHref,
+  backLabel = "Dashboard",
   children,
 }: {
   title: string;
   backHref?: string;
+  backLabel?: string;
   children: ReactNode;
 }) {
   const session = await auth();
@@ -27,7 +29,7 @@ export default async function AdminShell({
               className="mb-3 inline-flex items-center gap-2 text-sm text-default-300 transition-colors hover:text-white"
             >
               <IconifyIcon icon="lucide:arrow-left" className="h-4 w-4" />
-              Dashboard
+              {backLabel}
             </Link>
           ) : null}
           <h1 className="text-3xl font-semibold text-white">{title}</h1>

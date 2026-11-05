@@ -1,10 +1,12 @@
+import Link from "next/link";
+
 export default function DataTable({
   columns,
   rows,
   empty,
 }: {
   columns: string[];
-  rows: { id: string; cells: string[] }[];
+  rows: { id: string; cells: string[]; href?: string }[];
   empty: string;
 }) {
   return (
@@ -34,7 +36,13 @@ export default function DataTable({
               <tr key={row.id} className="border-b border-white/5 last:border-0">
                 {row.cells.map((cell, index) => (
                   <td key={`${row.id}-${index}`} className="px-4 py-3 text-white">
-                    {cell}
+                    {index === 0 && row.href ? (
+                      <Link href={row.href} className="font-medium hover:text-primary">
+                        {cell}
+                      </Link>
+                    ) : (
+                      cell
+                    )}
                   </td>
                 ))}
               </tr>
