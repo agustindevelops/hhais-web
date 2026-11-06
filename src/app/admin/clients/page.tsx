@@ -29,6 +29,7 @@ export default async function ClientsPage() {
         empty="No clients yet."
         rows={clients.map((client) => ({
           id: client.id,
+          href: `/admin/clients/${client.id}`,
           cells: [
             client.name,
             client.email,

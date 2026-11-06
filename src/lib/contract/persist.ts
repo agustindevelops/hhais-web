@@ -15,8 +15,11 @@ import type {
 import {
   bootstrapIntake,
   getCurrentProject,
+  getPrimaryContact,
+  loadIntakeBusiness,
 } from "@/lib/intake/bootstrap";
 import { loadIntakeSnapshot } from "@/lib/intake/persist";
+import { toIntakeSnapshot } from "@/lib/intake/snapshot";
 import { prisma } from "@/lib/prisma";
 import { buildContractS3Key } from "@/lib/storage/config";
 import { getObjectBytes, putObject } from "@/lib/storage/s3";
@@ -107,6 +110,44 @@ export async function loadContractPage(
     contract: contract ? await toContractView(contract) : null,
     exhibits,
     isAdmin,
+  };
+}
+
+/** Admin view of the current agreement. Does not require a live client access link. */
+export async function loadAdminContractPage(
+  clientId: string,
+): Promise<ContractPageData | null> {
+  const business = await loadIntakeBusiness(clientId);
+  const project = business ? getCurrentProject(business) : null;
+  if (!business || !project || !getPrimaryContact(business)) {
+    return null;
+  }
+
+  const [paymentPlans, latestToken] = await Promise.all([
+    prisma.paymentPlan.findMany({
+      orderBy: { sortOrder: "asc" },
+      select: { id: true, slug: true, name: true, description: true },
+    }),
+    prisma.clientAccessToken.findFirst({
+      where: { clientId },
+      orderBy: { createdAt: "desc" },
+      select: { token: true },
+    }),
+  ]);
+
+  const snapshot = toIntakeSnapshot({
+    token: latestToken?.token ?? "",
+    business,
+    project,
+    paymentPlans,
+  });
+  const contract = await ensureContract(project.id);
+
+  return {
+    snapshot,
+    contract: contract ? await toContractView(contract) : null,
+    exhibits: buildExhibits(snapshot),
+    isAdmin: true,
   };
 }
 

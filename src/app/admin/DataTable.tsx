@@ -33,11 +33,21 @@ export default function DataTable({
             </tr>
           ) : (
             rows.map((row) => (
-              <tr key={row.id} className="border-b border-white/5 last:border-0">
+              <tr
+                key={row.id}
+                className={`border-b border-white/5 last:border-0${
+                  row.href ? " group transition-colors hover:bg-white/5" : ""
+                }`}
+              >
                 {row.cells.map((cell, index) => (
                   <td key={`${row.id}-${index}`} className="px-4 py-3 text-white">
-                    {index === 0 && row.href ? (
-                      <Link href={row.href} className="font-medium hover:text-primary">
+                    {row.href ? (
+                      <Link
+                        href={row.href}
+                        className={`block group-hover:text-primary ${
+                          index === 0 ? "font-medium" : ""
+                        }`}
+                      >
                         {cell}
                       </Link>
                     ) : (

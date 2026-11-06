@@ -45,6 +45,13 @@ export type BootstrappedBusiness = Awaited<
 
 export type CurrentProject = BootstrappedBusiness["projects"][number];
 
+export function loadIntakeBusiness(clientId: string) {
+  return prisma.business.findUnique({
+    where: { clientId },
+    include: intakeInclude,
+  });
+}
+
 export async function bootstrapIntake(client: Client) {
   let business = await prisma.business.findUnique({
     where: { clientId: client.id },
