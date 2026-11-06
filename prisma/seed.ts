@@ -580,11 +580,20 @@ async function seedAegisIntake() {
     });
   }
 
-  await prisma.contract.upsert({
+  const existingContract = await prisma.projectContract.findFirst({
     where: { projectId: project.id },
-    update: {},
-    create: { projectId: project.id },
+    select: { contractId: true },
   });
+
+  if (!existingContract) {
+    await prisma.contract.create({
+      data: {
+        projects: {
+          create: { projectId: project.id },
+        },
+      },
+    });
+  }
 
   const featuresByName = new Map<string, string>();
   const featureNames = aegisData.features.map((item) => item.name);

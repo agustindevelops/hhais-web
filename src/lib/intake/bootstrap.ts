@@ -4,38 +4,40 @@ import type { Client } from "../../../generated/prisma/client";
 
 import { prisma } from "../prisma";
 
+const projectInclude = {
+  features: {
+    orderBy: { sortOrder: "asc" as const },
+    include: {
+      featureIntegrations: true,
+      attachments: {
+        where: { status: "uploaded" },
+        orderBy: { createdAt: "asc" as const },
+      },
+    },
+  },
+  integrations: {
+    orderBy: { createdAt: "asc" as const },
+    include: {
+      featureIntegrations: true,
+      attachments: {
+        where: { status: "uploaded" },
+        orderBy: { createdAt: "asc" as const },
+      },
+    },
+  },
+  attachments: {
+    where: { status: "uploaded" },
+    orderBy: { createdAt: "asc" as const },
+  },
+  paymentPlan: true,
+} as const;
+
 const intakeInclude = {
   contacts: true,
   projects: {
     orderBy: { updatedAt: "desc" as const },
     take: 1,
-    include: {
-      features: {
-        orderBy: { sortOrder: "asc" as const },
-        include: {
-          featureIntegrations: true,
-          attachments: {
-            where: { status: "uploaded" },
-            orderBy: { createdAt: "asc" as const },
-          },
-        },
-      },
-      integrations: {
-        orderBy: { createdAt: "asc" as const },
-        include: {
-          featureIntegrations: true,
-          attachments: {
-            where: { status: "uploaded" },
-            orderBy: { createdAt: "asc" as const },
-          },
-        },
-      },
-      attachments: {
-        where: { status: "uploaded" },
-        orderBy: { createdAt: "asc" as const },
-      },
-      paymentPlan: true,
-    },
+    include: projectInclude,
   },
 } as const;
 
@@ -49,6 +51,20 @@ export function loadIntakeBusiness(clientId: string) {
   return prisma.business.findUnique({
     where: { clientId },
     include: intakeInclude,
+  });
+}
+
+export function loadProjectForDocument(projectId: string) {
+  return prisma.project.findUnique({
+    where: { id: projectId },
+    include: {
+      ...projectInclude,
+      business: {
+        include: {
+          contacts: true,
+        },
+      },
+    },
   });
 }
 

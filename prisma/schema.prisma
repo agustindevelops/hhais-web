@@ -99,7 +99,7 @@ model Project {
   features                Feature[]
   integrations            Integration[]
   attachments             Attachment[]
-  contract                Contract?
+  contracts               ProjectContract[]
   createdAt               DateTime      @default(now())
   updatedAt               DateTime      @updatedAt
 
@@ -108,9 +108,8 @@ model Project {
 }
 
 model Contract {
-  id        String  @id @default(cuid())
-  projectId String  @unique
-  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  id       String            @id @default(cuid())
+  projects ProjectContract[]
 
   clientSignedAt      DateTime?
   clientSignerName    String?
@@ -125,6 +124,17 @@ model Contract {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model ProjectContract {
+  projectId  String
+  contractId String
+  project    Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  contract   Contract @relation(fields: [contractId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
+
+  @@id([projectId, contractId])
+  @@index([contractId])
 }
 
 model PaymentPlan {

@@ -118,11 +118,14 @@ export async function persistIntake(
     return { ok: false, error: "Project could not be loaded." };
   }
 
-  const existingContract = await prisma.contract.findUnique({
-    where: { projectId: project.id },
-    select: { lockedAt: true },
+  const lockedContract = await prisma.projectContract.findFirst({
+    where: {
+      projectId: project.id,
+      contract: { lockedAt: { not: null } },
+    },
+    select: { contractId: true },
   });
-  if (existingContract?.lockedAt) {
+  if (lockedContract) {
     return {
       ok: false,
       error:

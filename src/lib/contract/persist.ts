@@ -15,8 +15,8 @@ import type {
 import {
   bootstrapIntake,
   getCurrentProject,
-  getPrimaryContact,
-  loadIntakeBusiness,
+  loadProjectForDocument,
+  type BootstrappedBusiness,
 } from "@/lib/intake/bootstrap";
 import { loadIntakeSnapshot } from "@/lib/intake/persist";
 import { toIntakeSnapshot } from "@/lib/intake/snapshot";
@@ -113,41 +113,114 @@ export async function loadContractPage(
   };
 }
 
-/** Admin view of the current agreement. Does not require a live client access link. */
-export async function loadAdminContractPage(
-  clientId: string,
-): Promise<ContractPageData | null> {
-  const business = await loadIntakeBusiness(clientId);
-  const project = business ? getCurrentProject(business) : null;
-  if (!business || !project || !getPrimaryContact(business)) {
+export type AdminContractProjectLink = {
+  id: string;
+  name: string;
+  clientId: string;
+  clientName: string;
+};
+
+/** Full agreement for one contract, shown from this client's latest linked project. */
+export async function loadAdminContractDocument(input: {
+  clientId: string;
+  contractId: string;
+}): Promise<{
+  page: ContractPageData;
+  projects: AdminContractProjectLink[];
+  canSign: boolean;
+} | null> {
+  const contract = await prisma.contract.findUnique({
+    where: { id: input.contractId },
+    include: {
+      projects: {
+        include: {
+          project: {
+            select: {
+              id: true,
+              name: true,
+              updatedAt: true,
+              business: {
+                select: {
+                  clientId: true,
+                  client: { select: { name: true } },
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+  });
+
+  if (!contract) {
     return null;
   }
 
-  const [paymentPlans, latestToken] = await Promise.all([
+  const projects = contract.projects.map((link) => ({
+    id: link.project.id,
+    name: link.project.name,
+    updatedAt: link.project.updatedAt,
+    clientId: link.project.business.clientId,
+    clientName: link.project.business.client.name,
+  }));
+  const forClient = projects.filter((project) => project.clientId === input.clientId);
+  if (forClient.length === 0) {
+    return null;
+  }
+
+  const documentProject = [...forClient].sort(
+    (left, right) => right.updatedAt.getTime() - left.updatedAt.getTime(),
+  )[0];
+  const record = await loadProjectForDocument(documentProject.id);
+  const contact =
+    record?.business.contacts.find((item) => item.isPrimary) ??
+    record?.business.contacts[0];
+  if (!record || !contact) {
+    return null;
+  }
+
+  const [paymentPlans, latestToken, latestLink] = await Promise.all([
     prisma.paymentPlan.findMany({
       orderBy: { sortOrder: "asc" },
       select: { id: true, slug: true, name: true, description: true },
     }),
     prisma.clientAccessToken.findFirst({
-      where: { clientId },
+      where: { clientId: input.clientId },
       orderBy: { createdAt: "desc" },
       select: { token: true },
     }),
+    prisma.projectContract.findFirst({
+      where: { projectId: documentProject.id },
+      orderBy: { contract: { updatedAt: "desc" } },
+      select: { contractId: true },
+    }),
   ]);
 
+  const business = {
+    ...record.business,
+    projects: [record],
+  } as BootstrappedBusiness;
   const snapshot = toIntakeSnapshot({
     token: latestToken?.token ?? "",
     business,
-    project,
+    project: record,
     paymentPlans,
   });
-  const contract = await ensureContract(project.id);
 
   return {
-    snapshot,
-    contract: contract ? await toContractView(contract) : null,
-    exhibits: buildExhibits(snapshot),
-    isAdmin: true,
+    page: {
+      snapshot,
+      contract: await toContractView(contract),
+      exhibits: buildExhibits(snapshot),
+      isAdmin: true,
+    },
+    projects: projects.map((project) => ({
+      id: project.id,
+      name: project.name,
+      clientId: project.clientId,
+      clientName: project.clientName,
+    })),
+    canSign: latestLink?.contractId === contract.id,
   };
 }
 
@@ -371,9 +444,18 @@ export async function getExecutedPdfForToken(
     return null;
   }
 
-  const contract = await prisma.contract.findUnique({
-    where: { projectId: project.id },
+  const link = await prisma.projectContract.findFirst({
+    where: {
+      projectId: project.id,
+      contract: {
+        lockedAt: { not: null },
+        finalPdfPath: { not: null },
+      },
+    },
+    orderBy: { contract: { updatedAt: "desc" } },
+    select: { contract: true },
   });
+  const contract = link?.contract;
 
   if (!contract?.lockedAt || !contract.finalPdfPath) {
     return null;

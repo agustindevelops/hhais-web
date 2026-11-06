@@ -1,6 +1,9 @@
+import type { ReactNode } from "react";
 import Link from "next/link";
 
-export type ClientTab = "information" | "contract";
+import AdminShell from "../../AdminShell";
+
+export type ClientTab = "information" | "projects" | "contracts";
 
 export default function ClientTabs({
   clientId,
@@ -9,17 +12,11 @@ export default function ClientTabs({
   clientId: string;
   active: ClientTab;
 }) {
+  const base = `/admin/client/${clientId}`;
   const tabs: { id: ClientTab; label: string; href: string }[] = [
-    {
-      id: "information",
-      label: "Information",
-      href: `/admin/clients/${clientId}`,
-    },
-    {
-      id: "contract",
-      label: "Contract",
-      href: `/admin/clients/${clientId}?tab=contract`,
-    },
+    { id: "information", label: "Information", href: base },
+    { id: "projects", label: "Projects", href: `${base}/projects` },
+    { id: "contracts", label: "Contracts", href: `${base}/contracts` },
   ];
 
   return (
@@ -43,5 +40,24 @@ export default function ClientTabs({
         );
       })}
     </div>
+  );
+}
+
+export function ClientFrame({
+  clientId,
+  clientName,
+  active,
+  children,
+}: {
+  clientId: string;
+  clientName: string;
+  active: ClientTab;
+  children: ReactNode;
+}) {
+  return (
+    <AdminShell title={clientName} backHref="/admin/clients" backLabel="Clients">
+      <ClientTabs clientId={clientId} active={active} />
+      {children}
+    </AdminShell>
   );
 }
