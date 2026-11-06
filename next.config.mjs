@@ -11,11 +11,13 @@ const nextConfig = {
   experimental: {
     authInterrupts: true,
   },
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
   // The ESM build named-imports createElement, which webpack resolves against
   // React's react-server export map. The CJS build uses react.createElement.
+  turbopack: {
+    resolveAlias: {
+      "@iconify/react": iconifyCjs,
+    },
+  },
   webpack: (config) => {
     config.resolve.alias = {
       ...config.resolve.alias,

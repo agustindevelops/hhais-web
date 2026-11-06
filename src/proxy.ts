@@ -10,7 +10,7 @@ function withRobotsHeader(response: NextResponse) {
   return response;
 }
 
-export default auth((request) => {
+export const proxy = auth((request) => {
   const { pathname } = request.nextUrl;
   const isAdmin = pathname.startsWith("/admin");
   const isAuth = pathname.startsWith("/auth");
