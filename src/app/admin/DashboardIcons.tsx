@@ -23,6 +23,12 @@ const tools = [
     disabled: false,
   },
   {
+    label: "Availability",
+    href: "/admin/availability",
+    icon: "lucide:calendar-clock",
+    disabled: false,
+  },
+  {
     label: "Projects",
     href: "/admin/projects",
     icon: "lucide:folder-kanban",

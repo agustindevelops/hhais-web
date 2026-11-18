@@ -1,25 +1,24 @@
-"use client"
+import type { Metadata } from "next";
 
-import { InlineWidget } from "react-calendly"
+import Scheduler from "./Scheduler";
 
-const CalendlyPage = () => {
+export const metadata: Metadata = {
+  title: "Free consultation",
+  description: "Book a free consultation on an open time.",
+};
+
+export default function ConsultationPage() {
   return (
-    <section className="flex justify-center items-center w-full py-20 px-2">
-        <InlineWidget
-          url="https://calendly.com/agustindevelops/30min?hide_gdpr_banner=1"
-          styles={{
-            width: "100%",
-          }}
-          pageSettings={{
-            backgroundColor: "ffffff",
-            primaryColor: "00a2ff",
-            textColor: "000000",
-            hideLandingPageDetails: false,
-            hideEventTypeDetails: false,
-          }}
-        />
+    <section className="container py-28">
+      <div className="mx-auto max-w-3xl">
+        <h1 className="text-3xl font-semibold text-white">Free consultation</h1>
+        <p className="mt-3 text-default-300">
+          Pick an open time. Hours already booked on the calendar stay closed.
+        </p>
+        <div className="mt-8">
+          <Scheduler />
+        </div>
+      </div>
     </section>
-  )
+  );
 }
-
-export default CalendlyPage
