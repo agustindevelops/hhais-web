@@ -23,6 +23,12 @@ const tools = [
     disabled: false,
   },
   {
+    label: "Experience",
+    href: "/admin/experience",
+    icon: "lucide:briefcase",
+    disabled: false,
+  },
+  {
     label: "Projects",
     href: "/admin/projects",
     icon: "lucide:folder-kanban",

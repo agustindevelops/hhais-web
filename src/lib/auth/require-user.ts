@@ -35,7 +35,9 @@ export async function getSessionUserId() {
   return id;
 }
 
-export async function requireUser(): Promise<UserAuthResult> {
+export async function requireUser(
+  message = "Sign in to manage blog posts.",
+): Promise<UserAuthResult> {
   const userId = await getSessionUserId();
   if (!userId) {
     return {
@@ -43,7 +45,7 @@ export async function requireUser(): Promise<UserAuthResult> {
       response: NextResponse.json(
         {
           error: "Unauthorized",
-          message: "Sign in to manage blog posts.",
+          message,
         },
         { status: 401 },
       ),

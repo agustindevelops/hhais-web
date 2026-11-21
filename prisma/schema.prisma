@@ -219,12 +219,32 @@ model Attachment {
 }
 
 model User {
-  id           Int      @id @default(autoincrement())
-  username     String   @unique
+  id           Int          @id @default(autoincrement())
+  username     String       @unique
   passwordHash String
   blogs        Blog[]
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  experiences  Experience[]
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+}
+
+/// One portfolio experience card. Field names match the portfolio card.
+model Experience {
+  id         String   @id @default(cuid())
+  userId     Int
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role       String
+  company    String
+  url        String
+  location   String
+  /// Display text, for example May 2022 – May 2026
+  dates      String
+  highlights String[] @default([])
+  sortOrder  Int      @default(0)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([userId, sortOrder])
 }
 
 model Blog {
