@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 
+import { portfolioUsername } from "@/lib/auth/username";
 import { experienceErrorResponse } from "@/lib/experience/response";
 import { listPortfolioExperience } from "@/lib/experience/service";
 
@@ -9,15 +10,13 @@ type RouteContext = {
   params: Promise<{ username: string }>;
 };
 
-const USERNAME = /^[a-zA-Z0-9][a-zA-Z0-9._-]{0,63}$/;
-
 /**
  * Public experience cards for one user.
  * Each item matches the portfolio experience card.
  */
 export async function GET(_request: Request, context: RouteContext) {
-  const username = (await context.params).username.trim().toLowerCase();
-  if (!USERNAME.test(username)) {
+  const username = portfolioUsername((await context.params).username);
+  if (!username) {
     return NextResponse.json(
       { error: "PORTFOLIO_NOT_FOUND", message: "Portfolio not found" },
       { status: 404 },

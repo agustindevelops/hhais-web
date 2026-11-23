@@ -1,9 +1,11 @@
 import { config } from "dotenv";
 
+import { portfolioUsername } from "../src/lib/auth/username";
+
 config({ path: ".env.local" });
 config({ path: ".env" });
 
-const PORTFOLIO_USERNAME = "agustin";
+const PORTFOLIO_USERNAME = portfolioUsername(process.env.PORTFOLIO_USERNAME);
 
 const experience = [
   {
@@ -55,6 +57,10 @@ const experience = [
 async function main() {
   const { prisma } = await import("../src/lib/prisma");
 
+  if (!PORTFOLIO_USERNAME) {
+    throw new Error("PORTFOLIO_USERNAME is not set");
+  }
+
   const user = await prisma.user.findUnique({
     where: { username: PORTFOLIO_USERNAME },
     select: { id: true, username: true },
@@ -100,7 +106,7 @@ async function main() {
   }
 
   console.log(
-    `Portfolio experience is ready at /api/portfolio/${user.username}/experience`,
+    `Portfolio experience is ready at /api/portfolio/${user.username}`,
   );
   await prisma.$disconnect();
 }

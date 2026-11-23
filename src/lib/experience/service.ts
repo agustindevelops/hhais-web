@@ -162,11 +162,9 @@ export async function listPortfolioExperience(username: string) {
   return listExperienceCards(user.id);
 }
 
-const AGUSTIN_USERNAME = "agustin";
-
-/** Portfolio sections for Agustin. More sections join this object later. */
-export async function getAgustinPortfolio() {
-  const experience = await listPortfolioExperience(AGUSTIN_USERNAME);
+/** Portfolio sections for one user. More sections join this object later. */
+export async function getPortfolio(username: string) {
+  const experience = await listPortfolioExperience(username);
   if (!experience) {
     return null;
   }
