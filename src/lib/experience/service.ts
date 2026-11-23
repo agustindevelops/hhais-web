@@ -142,6 +142,14 @@ export async function listOwnedExperiences(userId: number) {
   });
 }
 
+async function listExperienceCards(userId: number) {
+  const experiences = await prisma.experience.findMany({
+    where: { userId },
+    orderBy: experienceOrder,
+  });
+  return experiences.map(serializePortfolioExperience);
+}
+
 export async function listPortfolioExperience(username: string) {
   const user = await prisma.user.findUnique({
     where: { username },
@@ -151,11 +159,19 @@ export async function listPortfolioExperience(username: string) {
     return null;
   }
 
-  const experiences = await prisma.experience.findMany({
-    where: { userId: user.id },
-    orderBy: experienceOrder,
-  });
-  return experiences.map(serializePortfolioExperience);
+  return listExperienceCards(user.id);
+}
+
+const AGUSTIN_USERNAME = "agustin";
+
+/** Portfolio sections for Agustin. More sections join this object later. */
+export async function getAgustinPortfolio() {
+  const experience = await listPortfolioExperience(AGUSTIN_USERNAME);
+  if (!experience) {
+    return null;
+  }
+
+  return { experience };
 }
 
 export async function getOwnedExperience(input: { userId: number; id: string }) {

@@ -16,8 +16,8 @@ const USERNAME = /^[a-zA-Z0-9][a-zA-Z0-9._-]{0,63}$/;
  * Each item matches the portfolio experience card.
  */
 export async function GET(_request: Request, context: RouteContext) {
-  const { username } = await context.params;
-  if (!username || !USERNAME.test(username)) {
+  const username = (await context.params).username.trim().toLowerCase();
+  if (!USERNAME.test(username)) {
     return NextResponse.json(
       { error: "PORTFOLIO_NOT_FOUND", message: "Portfolio not found" },
       { status: 404 },

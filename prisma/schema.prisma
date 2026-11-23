@@ -220,6 +220,7 @@ model Attachment {
 
 model User {
   id           Int          @id @default(autoincrement())
+  /// Stored lowercase. Sign-in input is normalized before lookup.
   username     String       @unique
   passwordHash String
   blogs        Blog[]

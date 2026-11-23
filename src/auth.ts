@@ -3,6 +3,7 @@ import Credentials from "next-auth/providers/credentials";
 
 import { authConfig } from "@/auth.config";
 import { verifyPassword } from "@/lib/auth/password";
+import { normalizeUsername } from "@/lib/auth/username";
 import { prisma } from "@/lib/prisma";
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
@@ -16,7 +17,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       async authorize(credentials) {
         const username =
           typeof credentials?.username === "string"
-            ? credentials.username.trim()
+            ? normalizeUsername(credentials.username)
             : "";
         const password =
           typeof credentials?.password === "string" ? credentials.password : "";
